@@ -61,7 +61,18 @@ export const discoverConfigSchemaWithDefaults = discoverConfigSchema.omit({
   clear: true,
   minify: true,
 }).extend({
-  probes: z.record(z.string(), z.array(probeConfigSchemaWithDefaults)),
+  probes: discoverConfigSchema.shape.probes.transform((probes) => {
+    const normalized = {} as Record<string, z.infer<typeof probeConfigSchema>[]>
+    for (const [key, value] of Object.entries(probes)) {
+      if (Array.isArray(value)) {
+        normalized[key] = value.map(v => probeConfigSchemaWithDefaults.parse(v))
+      }
+      else {
+        normalized[key] = [probeConfigSchemaWithDefaults.parse(value)]
+      }
+    }
+    return normalized
+  }),
   outputDir: discoverConfigSchema.shape.outputDir.default('./.autodisco'),
   clear: discoverConfigSchema.shape.clear.default(true),
   minify: discoverConfigSchema.shape.minify.default(false),

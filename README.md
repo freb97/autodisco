@@ -1,6 +1,6 @@
 # AutoDisco
 
-🪩 Bring back the good old times
+🪩 Use legacy APIs with confidence
 
 AutoDisco is a tool for using legacy REST APIs with typed inputs and responses.
 It automatically generates OpenAPI and Zod schemas by probing the endpoints to help
