@@ -1,10 +1,22 @@
 {
   "name": "autodisco",
   "type": "module",
-  "version": "0.0.3",
-  "description": "Automatically typed fetch client for any API",
+  "version": "0.0.4",
+  "description": "Automatically generate OpenAPI schemas by probing RESTful APIs",
+  "author": "Frederik Bußmann <frederik@bussmann.io>",
   "license": "MIT",
   "repository": "freb97/autodisco",
+  "keywords": [
+    "codegen",
+    "openapi",
+    "zod",
+    "typescript",
+    "api",
+    "discovery",
+    "rest",
+    "schema",
+    "generation"
+  ],
   "exports": {
     ".": "./dist/index.mjs"
   },
