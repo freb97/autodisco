@@ -1,6 +1,6 @@
 import type { ParsedDiscoverConfig, ParsedProbeConfig } from './config.ts'
 
-import { withQuery } from 'ufo'
+import { joinURL, withQuery } from 'ufo'
 
 export type ProbeOptions = ParsedDiscoverConfig
 
@@ -15,7 +15,7 @@ export async function probe(endpoint: string, config: ParsedProbeConfig, baseUrl
     return encodeURIComponent(String(value))
   })
 
-  const response = await fetch(new URL(config.query ? withQuery(path, config.query) : path, baseUrl), {
+  const response = await fetch(joinURL(baseUrl ?? '', config.query ? withQuery(path, config.query) : path), {
     method: config.method,
     ...(config.body ? { body: config.body } : {}),
     ...(config.headers ? { headers: config.headers } : {}),
@@ -35,7 +35,10 @@ export async function probeEndpoints(options: ProbeOptions): Promise<Record<stri
     const probes = []
 
     for (const probeConfig of probeConfigs) {
-      probes.push(probe(endpoint, probeConfig, options.baseUrl))
+      probes.push(probe(endpoint, {
+        ...(options.headers ? { headers: options.headers } : {}),
+        ...probeConfig,
+      }, options.baseUrl))
     }
 
     const samples = await Promise.all(probes)

@@ -62,7 +62,7 @@ export const discoverConfigSchemaWithDefaults = discoverConfigSchema.omit({
   minify: true,
 }).extend({
   probes: discoverConfigSchema.shape.probes.transform((probes) => {
-    const normalized = {} as Record<string, z.infer<typeof probeConfigSchema>[]>
+    const normalized = {} as Record<string, z.infer<typeof probeConfigSchemaWithDefaults>[]>
     for (const [key, value] of Object.entries(probes)) {
       if (Array.isArray(value)) {
         normalized[key] = value.map(v => probeConfigSchemaWithDefaults.parse(v))

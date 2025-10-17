@@ -10,9 +10,10 @@ import { createDocument } from 'zod-openapi'
 
 export type GenerateOpenApiOptions = ParsedDiscoverConfig
 
-export function getParams(params?: Record<string, string | number | boolean>) {
+export function getParams(params?: Record<string, string | number | boolean>, optional = false) {
   const parsedParams = Object.entries(params || {}).reduce((acc, [key, value]) => {
-    acc[key] = typeof value === 'string' ? z.string() : typeof value === 'number' ? z.number() : z.boolean()
+    const o = (v: z.ZodType) => optional ? v.optional() : v
+    acc[key] = typeof value === 'string' ? o(z.string()) : typeof value === 'number' ? o(z.number()) : o(z.boolean())
     return acc
   }, {} as Record<string, z.ZodType>)
 
@@ -34,8 +35,8 @@ export async function generateOpenApiSchema(
       const method = probeConfig.method
 
       const params = getParams(probeConfig.params)
-      const query = getParams(probeConfig.query)
-      const headers = getParams({ ...options.headers, ...probeConfig.headers })
+      const query = getParams(probeConfig.query, true)
+      const headers = getParams({ ...options.headers, ...probeConfig.headers }, true)
 
       // Convert :param to {param} for OpenAPI format
       const openApiPath = endpoint.replaceAll(/:\w+/g, match => `{${match.slice(1)}}`)
@@ -45,7 +46,7 @@ export async function generateOpenApiSchema(
           requestParams: {
             ...(params ? { path: params } : {}),
             ...(query ? { query } : {}),
-            ...(headers ? { header: headers } : {}),
+            ...(headers ? { headers } : {}),
           },
           responses: {
             200: {
