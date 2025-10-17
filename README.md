@@ -2,16 +2,16 @@
 
 🪩 Use legacy APIs with confidence
 
-AutoDisco is a tool for automatic discovery of REST APIs that do not provide an OpenAPI specification themselves.
+AutoDisco is a tool for automatic discovery of REST APIs that do not provide an OpenAPI specification.
 It generates Zod schemas by probing the endpoints and inferring their structure.
 From the discovered schemas, an OpenAPI specification is generated for easy access.
 
-> [!NOTE]  
+> [!NOTE]
 > AutoDisco is in early development. It may not work perfectly for all APIs and use cases.
 
 ## Installation
 
-```bash
+```sh
 npm install autodisco
 ```
 
