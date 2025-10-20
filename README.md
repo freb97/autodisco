@@ -24,27 +24,30 @@ await discover({
   baseUrl: 'https://jsonplaceholder.typicode.com',
 
   probes: {
-    '/todos/:id': {
-      params: {
-        id: 1,
+    get: {
+      '/todos': true,
+      '/posts': true,
+
+      '/users/{id}': {
+        params: {
+          id: 1,
+        },
+      },
+
+      '/comments': {
+        query: {
+          postId: 1,
+        },
       },
     },
 
-    '/posts/:id': {
-      params: {
-        id: 1,
-      },
-    },
-
-    '/users/:id': {
-      params: {
-        id: 1,
-      },
-    },
-
-    '/comments': {
-      query: {
-        postId: 1,
+    post: {
+      '/users': {
+        body: {
+          name: 'John Doe',
+          username: 'johndoe',
+          email: 'johndoe@example.com',
+        },
       },
     },
   },
@@ -54,10 +57,11 @@ await discover({
 This will create the following files:
 
 - `.autodisco/zod`
-  - `todos.ts`
-  - `posts.ts`
-  - `users.ts`
-  - `comments.ts`
+  - `todos.get.ts`
+  - `posts.get.ts`
+  - `users.get.ts`
+  - `comments.get.ts`
+  - `users.post.ts`
 - `.autodisco/openapi/schema.json`
 
 ## Configuration

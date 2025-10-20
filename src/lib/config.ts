@@ -4,14 +4,11 @@ import { z } from 'zod'
  * HTTP methods supported for API probes
  */
 export const httpMethodSchema = z.enum([
-  'GET',
-  'PUT',
-  'POST',
-  'PATCH',
-  'DELETE',
-  'HEAD',
-  'OPTIONS',
-  'TRACE',
+  'get',
+  'put',
+  'post',
+  'patch',
+  'delete',
 ])
 
 /**
@@ -25,7 +22,6 @@ export const httpHeadersSchema = z.record(z.string(), z.string())
 export const probeConfigSchema = z.object({
   params: z.record(z.string(), z.union([z.string(), z.number(), z.boolean()])).optional(),
   query: z.record(z.string(), z.union([z.string(), z.number(), z.boolean()])).optional(),
-  method: httpMethodSchema.optional(),
   headers: httpHeadersSchema.optional(),
   body: z.any().optional(),
 })
@@ -37,19 +33,10 @@ export const discoverConfigSchema = z.object({
   outputDir: z.string().optional(),
   baseUrl: z.string().optional(),
   headers: httpHeadersSchema.optional(),
-  probes: z.record(z.string(), z.union([probeConfigSchema, z.array(probeConfigSchema)])),
+  probes: z.record(httpMethodSchema, z.union([probeConfigSchema, z.array(probeConfigSchema)]).or(z.boolean().default(true))),
   clear: z.boolean().optional(),
   minify: z.boolean().optional(),
   logger: z.any().optional(),
-})
-
-/**
- * Schema for probe configuration with defaults applied
- */
-export const probeConfigSchemaWithDefaults = probeConfigSchema.omit({
-  method: true,
-}).extend({
-  method: probeConfigSchema.shape.method.default('GET'),
 })
 
 /**
@@ -61,18 +48,23 @@ export const discoverConfigSchemaWithDefaults = discoverConfigSchema.omit({
   clear: true,
   minify: true,
 }).extend({
-  probes: discoverConfigSchema.shape.probes.transform((probes) => {
-    const normalized = {} as Record<string, z.infer<typeof probeConfigSchemaWithDefaults>[]>
+  probes: z.partialRecord(httpMethodSchema, discoverConfigSchema.shape.probes.transform((probes) => {
+    const normalized = {} as Record<string, z.infer<typeof probeConfigSchema>[]>
     for (const [key, value] of Object.entries(probes)) {
       if (Array.isArray(value)) {
-        normalized[key] = value.map(v => probeConfigSchemaWithDefaults.parse(v))
+        normalized[key] = value.map(v => probeConfigSchema.parse(v))
       }
       else {
-        normalized[key] = [probeConfigSchemaWithDefaults.parse(value)]
+        if (value === true) {
+          probeConfigSchema.parse({})
+        }
+        else {
+          normalized[key] = [probeConfigSchema.parse(value)]
+        }
       }
     }
     return normalized
-  }),
+  })),
   outputDir: discoverConfigSchema.shape.outputDir.default('./.autodisco'),
   clear: discoverConfigSchema.shape.clear.default(true),
   minify: discoverConfigSchema.shape.minify.default(false),
@@ -97,11 +89,6 @@ export type ProbeConfig = z.infer<typeof probeConfigSchema>
  * Discovery configuration
  */
 export type DiscoverConfig = z.infer<typeof discoverConfigSchema>
-
-/**
- * Parsed endpoint probe configuration with defaults applied
- */
-export type ParsedProbeConfig = z.infer<typeof probeConfigSchemaWithDefaults>
 
 /**
  * Parsed discovery configuration with defaults applied

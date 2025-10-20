@@ -1,4 +1,4 @@
-import type { ParsedDiscoverConfig } from '../config.ts'
+import type { ParsedDiscoverConfig } from '../config'
 
 import { writeFile } from 'node:fs/promises'
 import {

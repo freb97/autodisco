@@ -1,6 +1,6 @@
 import type { ZodOpenApiPathsObject } from 'zod-openapi'
 
-import type { ParsedDiscoverConfig } from '../config.ts'
+import type { ParsedDiscoverConfig } from '../config'
 
 import { writeFile } from 'node:fs/promises'
 

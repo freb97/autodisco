@@ -1,4 +1,4 @@
-import type { ParsedDiscoverConfig } from './config.ts'
+import type { ParsedDiscoverConfig } from './config'
 
 import { mkdir, rm, stat } from 'node:fs/promises'
 import { joinURL } from 'ufo'

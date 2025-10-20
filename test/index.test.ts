@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import {} from '../src/index.ts'
+import {} from '../src/index'
 
 describe('packageName', () => {
   it('pass', () => {
