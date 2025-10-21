@@ -32,7 +32,8 @@
     "lint:fix": "eslint . --fix",
     "prepack": "bun run build",
     "release": "bun test && npm publish && git push --follow-tags",
-    "test": "vitest run --coverage",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
     "typecheck": "tsc --noEmit --skipLibCheck"
   },
   "peerDependencies": {
