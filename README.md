@@ -1,5 +1,6 @@
 # AutoDisco
 
+[![Github Actions][github-actions-src]][github-actions-href]
 [![NPM version][npm-version-src]][npm-version-href]
 [![NPM last update][npm-last-update-src]][npm-last-update-href]
 [![License][license-src]][license-href]
@@ -144,6 +145,9 @@ This project is heavily inspired by and built with the following libraries:
 ## 📜 License
 
 Published under the [MIT License](https://github.com/freb97/autodisco/tree/main/LICENSE).
+
+[github-actions-src]: https://github.com/freb97/autodisco/actions/workflows/test.yml/badge.svg
+[github-actions-href]: https://github.com/freb97/autodisco/actions
 
 [npm-version-src]: https://img.shields.io/npm/v/autodisco/latest.svg?style=flat&colorA=18181B&colorB=31C553
 [npm-version-href]: https://npmjs.com/package/autodisco
