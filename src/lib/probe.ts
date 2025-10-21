@@ -76,10 +76,19 @@ function createProbes(config: ParsedDiscoverConfig) {
 export async function probeEndpoints(config: ParsedDiscoverConfig) {
   const probes = createProbes(config)
 
-  return Promise.all(probes).then(results => results.flatMap(result => ({
-    method: result[0].method,
-    path: result[0].path,
-    config: result.reduce((acc, curr) => defu(curr.config, acc), {} as ProbeConfig),
-    samples: result.reduce((acc, curr) => acc.concat(curr.samples), [] as string[]),
-  })))
+  return Promise.all(probes).then(results => results.flatMap((result) => {
+    if (result.length > 0) {
+      return {
+        method: result[0].method,
+        path: result[0].path,
+        config: result.reduce((acc, curr) => defu(curr.config, acc), {} as ProbeConfig),
+        samples: result.reduce((acc, curr) => acc.concat(curr.samples), [] as string[]),
+      }
+    }
+    else {
+      config.logger.error('Did not receive any valid probe responses')
+    }
+
+    return []
+  }))
 }

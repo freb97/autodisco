@@ -6,5 +6,8 @@ dist
 .eslintcache
 *.log*
 *.env*
+
+# Generated files
 .autodisco
+test/.outputs/
 test.js
