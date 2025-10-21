@@ -1,3 +1,4 @@
+import { createConsola } from 'consola'
 import { z } from 'zod'
 
 /**
@@ -33,9 +34,12 @@ export const discoverConfigSchema = z.object({
   outputDir: z.string().optional(),
   baseUrl: z.string().optional(),
   headers: httpHeadersSchema.optional(),
-  probes: z.record(httpMethodSchema, z.union([probeConfigSchema, z.array(probeConfigSchema)]).or(z.boolean().default(true))),
+  probes: z.partialRecord(httpMethodSchema, z.record(z.string(), z.union([probeConfigSchema, z.array(probeConfigSchema)]))),
   clear: z.boolean().optional(),
   minify: z.boolean().optional(),
+  generate: z.object({
+    zod: z.boolean().optional(),
+  }).optional(),
   logger: z.any().optional(),
 })
 
@@ -47,27 +51,30 @@ export const discoverConfigSchemaWithDefaults = discoverConfigSchema.omit({
   probes: true,
   clear: true,
   minify: true,
+  logger: true,
 }).extend({
-  probes: z.partialRecord(httpMethodSchema, discoverConfigSchema.shape.probes.transform((probes) => {
-    const normalized = {} as Record<string, z.infer<typeof probeConfigSchema>[]>
-    for (const [key, value] of Object.entries(probes)) {
-      if (Array.isArray(value)) {
-        normalized[key] = value.map(v => probeConfigSchema.parse(v))
-      }
-      else {
-        if (value === true) {
-          probeConfigSchema.parse({})
+  outputDir: discoverConfigSchema.shape.outputDir.default('.autodisco'),
+  probes: discoverConfigSchema.shape.probes.transform((probes) => {
+    const transformed: Record<string, Record<string, ProbeConfig[]>> = {}
+
+    for (const [method, endpoints] of Object.entries(probes)) {
+      transformed[method] = {}
+
+      for (const [endpoint, config] of Object.entries(endpoints)) {
+        if (Array.isArray(config)) {
+          transformed[method][endpoint] = config
         }
         else {
-          normalized[key] = [probeConfigSchema.parse(value)]
+          transformed[method][endpoint] = [config]
         }
       }
     }
-    return normalized
-  })),
-  outputDir: discoverConfigSchema.shape.outputDir.default('./.autodisco'),
+
+    return transformed
+  }),
   clear: discoverConfigSchema.shape.clear.default(true),
   minify: discoverConfigSchema.shape.minify.default(false),
+  logger: discoverConfigSchema.shape.logger.transform(logger => createConsola(logger)),
 })
 
 /**

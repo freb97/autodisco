@@ -1,76 +1,85 @@
-import type { ParsedDiscoverConfig, ProbeConfig } from './config'
+import type { HttpMethod, ParsedDiscoverConfig, ProbeConfig } from './config'
 
-import { joinURL, withQuery } from 'ufo'
+import { defu } from 'defu'
+import { joinURL } from 'ufo'
 
-import { useLogger } from '../helpers/logger'
+import { resolvePath } from '../helpers/path'
 
-export type ProbeOptions = ParsedDiscoverConfig
-
-export type Probe
-
-export async function probe(endpoint: string, config: ProbeConfig & {
-  method: string
-  baseUrl?: string
-  logger?: ParsedDiscoverConfig['logger']
-}) {
-  const logger = useLogger(config.logger)
-
-  const path = endpoint.replaceAll(/:([a-z]+)/gi, (_, key) => {
-    const value = config.params?.[key]
-
-    if (value === undefined) {
-      logger.error(`Missing parameter ${key} for endpoint ${endpoint}`)
-    }
-
-    return encodeURIComponent(String(value))
-  })
-
-  const response = await fetch(joinURL(config.baseUrl ?? '', config.query ? withQuery(path, config.query) : path), {
-    method: config.method,
-    ...(config.body ? { body: config.body } : {}),
-    ...(config.headers ? { headers: config.headers } : {}),
-  })
-
-  if (!response.ok) {
-    logger.error(`Error probing ${endpoint}: ${response.statusText}`)
-  }
-
-  return {
-    sample: response.text(),
-    config,
-  }
+export interface ProbeResult {
+  method: HttpMethod
+  path: string
+  config: ProbeConfig
+  samples: string[]
 }
 
-export async function probeEndpoints(options: ProbeOptions): Promise<Record<string, { samples: string[], config: ProbeConfig }>> {
-  const results: Record<string, { samples: string[], config: ProbeConfig }> = {}
+/**
+ * Create probes for all endpoints defined in the configuration
+ *
+ * @param config Parsed discovery configuration
+ *
+ * @returns Array of promises for probe results
+ */
+function createProbes(config: ParsedDiscoverConfig) {
+  async function create(method: HttpMethod, path: string, probeConfigs: ProbeConfig[]) {
+    const results: ProbeResult[] = []
 
-  for (const [method, probes] of Object.entries(options.probes)) {
-    for (const [endpoint, probeConfigs] of Object.entries(probes)) {
-      const probes = []
+    for (const probeConfig of probeConfigs) {
+      const headers = { ...config.headers, ...probeConfig.headers }
+      const body = probeConfig.body
 
-      if (!Array.isArray(probeConfigs)) {
-        probes.push(probe(endpoint, {
+      results.push({
+        method,
+        path,
+        config: probeConfig,
+        samples: [await fetch(joinURL(config.baseUrl ?? '', resolvePath(path, probeConfig)), {
           method,
-          baseUrl: options.baseUrl,
-          ...(options.headers ? { headers: options.headers } : {}),
-        }))
-      }
-      else {
-        for (const probeConfig of probeConfigs) {
-          probes.push(probe(endpoint, {
-            method,
-            baseUrl: options.baseUrl,
-            ...(options.headers ? { headers: options.headers } : {}),
-            ...probeConfig,
-          }))
-        }
-      }
+          ...(body ? { body } : {}),
+          ...(headers ? { headers } : {}),
+        }).then(async (response) => {
+          if (!response.ok) {
+            config.logger.error(`Received error response fetching "${method} ${path}": ${response.statusText}`)
+          }
+          else {
+            config.logger.debug(`Received success response fetching "${method} ${path}": ${response.statusText}`)
+          }
 
-      const samples = await Promise.all(probes)
+          return response.text()
+        }).catch((error) => {
+          config.logger.error(`Network error fetching "${method} ${path}"`)
+          config.logger.debug(error)
+          return ''
+        })],
+      })
+    }
 
-      results[endpoint] = samples
+    return results.filter(result => result.samples.length > 0 && result.samples.some(sample => sample.length > 0))
+  }
+
+  const probes: Promise<ProbeResult[]>[] = []
+
+  for (const [method, endpoints] of Object.entries(config.probes)) {
+    for (const [path, probeConfigs] of Object.entries(endpoints)) {
+      probes.push(create(method as HttpMethod, path, probeConfigs))
     }
   }
 
-  return results
+  return probes
+}
+
+/**
+ * Probe all endpoints defined in the configuration
+ *
+ * @param config Parsed discovery configuration
+ *
+ * @returns Array of probe results
+ */
+export async function probeEndpoints(config: ParsedDiscoverConfig) {
+  const probes = createProbes(config)
+
+  return Promise.all(probes).then(results => results.flatMap(result => ({
+    method: result[0].method,
+    path: result[0].path,
+    config: result.reduce((acc, curr) => defu(curr.config, acc), {} as ProbeConfig),
+    samples: result.reduce((acc, curr) => acc.concat(curr.samples), [] as string[]),
+  })))
 }

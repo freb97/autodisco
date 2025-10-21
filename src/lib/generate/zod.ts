@@ -1,128 +1,166 @@
-import type { ParsedDiscoverConfig } from '../config'
+import type { HttpMethod, ParsedDiscoverConfig, ProbeConfig } from '../config'
+import type { ProbeResult } from '../probe'
 
-import { writeFile } from 'node:fs/promises'
-import {
-  InputData,
-  jsonInputForTargetLanguage,
-  quicktype,
-} from 'quicktype-core'
-import { joinURL, normalizeURL, withoutTrailingSlash } from 'ufo'
+import { mkdir, writeFile } from 'node:fs/promises'
+import defu from 'defu'
+import { joinURL } from 'ufo'
 import { z } from 'zod'
 
-type GenerateZodOptions = ParsedDiscoverConfig & {
-  typeName?: string
+import { resolveTypeName } from '../../helpers/path'
+import { inferZodSchemaFromValue } from '../../helpers/schema'
+
+export interface SchemaResult {
+  method: HttpMethod
+  path: string
+  config: ProbeConfig
+  schema: z.ZodType
+  bodySchema?: z.ZodType
 }
 
-export async function generateZodFromJsonSamples(
-  jsonSamples: string[],
-  options: GenerateZodOptions,
-) {
-  const { typeName = 'GeneratedType' } = options
+/**
+ * Merge multiple JSON samples into a single JSON object
+ *
+ * @param samples JSON samples to merge
+ *
+ * @returns Merged JSON object
+ */
+function mergeSamples(samples: string[]) {
+  const base = JSON.parse(samples[0])
 
-  try {
-    const parsedSamples = jsonSamples.map((sample, index) => {
+  return samples.slice(1).reduce((acc, sample) => {
+    const value = JSON.parse(sample)
+
+    if (Array.isArray(value) && Array.isArray(acc)) {
+      return acc.concat(value)
+    }
+    else if (typeof value === 'object' && typeof acc === 'object') {
+      return defu(value, acc)
+    }
+    else {
+      throw new TypeError('Incompatible sample types for merging')
+    }
+  }, base)
+}
+
+/**
+ * Create Zod schemas from probe results using Quicktype
+ *
+ * @param probeResults Results from probing endpoints
+ * @param config Parsed discovery configuration
+ *
+ * @returns Array of promises for schema generation
+ */
+async function createSchemas(probeResults: ProbeResult[], config: ParsedDiscoverConfig) {
+  return import('quicktype-core').then(async (quickType) => {
+    const groupedResults = new Map<string, ProbeResult[]>()
+
+    // Group probe results by method and name
+    for (const probeResult of probeResults) {
+      const name = resolveTypeName(probeResult.path)
+      const key = `${probeResult.method}:${name}`
+
+      if (!groupedResults.has(key)) {
+        groupedResults.set(key, [])
+      }
+
+      groupedResults.get(key)?.push(probeResult)
+    }
+
+    // Convert Map values to array
+    return Promise.all(Array.from(groupedResults.values()).map(async (group) => {
+      const name = resolveTypeName(group[0].path)
+      const method = group[0].method
+
+      const inputData = new quickType.InputData()
+
+      const jsonInput = quickType.jsonInputForTargetLanguage('typescript-zod')
+
+      await jsonInput.addSource({
+        name,
+        samples: group.flatMap(result => result.samples),
+      })
+
+      inputData.addInput(jsonInput)
+
       try {
-        return JSON.parse(sample)
+        const result = await quickType.quicktype({
+          inputData,
+          lang: 'typescript-zod',
+          rendererOptions: {
+            'just-types': 'true',
+            'prefer-unions': 'true',
+            'prefer-const-values': 'false',
+          },
+        })
+
+        await mkdir(joinURL(config.outputDir, 'zod', method), { recursive: true })
+          .then(() => writeFile(
+            joinURL(config.outputDir, 'zod', method, `${name}.ts`),
+            result.lines.join(config.minify ? '' : '\n'),
+          ))
       }
       catch (error) {
-        throw new TypeError(`Invalid JSON in sample ${index + 1}: ${error instanceof Error ? error.message : String(error)}`)
+        config.logger.error(`Failed to generate Zod schema for ${method} ${group[0].path}`)
+        config.logger.debug(error)
       }
-    })
-
-    const inputData = new InputData()
-
-    const jsonInput = jsonInputForTargetLanguage('typescript-zod')
-
-    await jsonInput.addSource({
-      name: typeName,
-      samples: parsedSamples.map(s => JSON.stringify(s)),
-    })
-
-    inputData.addInput(jsonInput)
-
-    const result = await quicktype({
-      inputData,
-      lang: 'typescript-zod',
-      rendererOptions: {
-        'just-types': 'true',
-        'prefer-unions': 'true',
-        'prefer-const-values': 'false',
-      },
-    })
-
-    const zodCode = result.lines.join(options.minify ? '' : '\n')
-
-    await writeFile(joinURL(options.outputDir, 'zod', `${typeName}.ts`), zodCode)
-
-    const runtimeSchema = createRuntimeSchemaFromSamples(parsedSamples)
-
-    return { code: zodCode, schema: runtimeSchema }
-  }
-  catch (error) {
-    throw new Error(`Failed to generate Zod schema from samples: ${error instanceof Error ? error.message : String(error)}`)
-  }
+    }))
+  }).catch((error) => {
+    throw new Error('quicktype-core is required to generate Zod schemas.\nYou can install it with: npm install quicktype-core', { cause: error })
+  })
 }
 
 /**
- * Creates a Zod schema from JSON samples at runtime
+ * Create runtime Zod schemas from probe results
+ *
+ * @param probeResults Results from probing endpoints
+ * @param config Parsed discovery configuration
+ *
+ * @returns Array of schema results
  */
-function createRuntimeSchemaFromSamples(samples: any[]): z.ZodType {
-  if (samples.length === 0) {
-    return z.any()
-  }
-
-  // Using the first sample to infer the schema structure
-  // TODO: Refine by merging all samples to create a more comprehensive schema
-  const firstSample = samples[0]
-  return inferZodSchemaFromValue(firstSample)
-}
-
-/**
- * Recursively infers a Zod schema from a value
- */
-function inferZodSchemaFromValue(value: any): z.ZodType {
-  if (value === null) {
-    return z.null()
-  }
-
-  if (Array.isArray(value)) {
-    if (value.length === 0) {
-      return z.array(z.any())
+function createRuntimeSchemas(probeResults: ProbeResult[], config: ParsedDiscoverConfig) {
+  const getBodySchema = (config: ProbeConfig) => {
+    if (!config.body) {
+      return undefined
     }
-    return z.array(inferZodSchemaFromValue(value[0]))
+
+    const schema = inferZodSchemaFromValue(config.body)
+
+    return schema instanceof z.ZodObject ? schema.partial() : schema
   }
 
-  if (typeof value === 'object') {
-    const shape: Record<string, any> = {}
-    for (const [key, val] of Object.entries(value)) {
-      shape[key] = inferZodSchemaFromValue(val)
+  const schemas: SchemaResult[] = []
+
+  for (const result of probeResults) {
+    try {
+      schemas.push({
+        method: result.method,
+        path: result.path,
+        config: result.config,
+        schema: inferZodSchemaFromValue(mergeSamples(result.samples)),
+        bodySchema: getBodySchema(result.config),
+      })
     }
-    return z.object(shape)
-  }
-
-  if (typeof value === 'string')
-    return z.string()
-  if (typeof value === 'number')
-    return z.number()
-  if (typeof value === 'boolean')
-    return z.boolean()
-
-  return z.any()
-}
-
-export async function generateZodSchemas(probeResults: Record<string, string[]>, options: GenerateZodOptions) {
-  const schemas: Record<string, z.ZodType> = {}
-
-  for (const [endpoint, samples] of Object.entries(probeResults)) {
-    const path = withoutTrailingSlash(normalizeURL(endpoint.replaceAll(/:([a-z]+)/gi, '')))
-
-    const result = await generateZodFromJsonSamples(samples, {
-      typeName: path,
-      ...options,
-    })
-
-    schemas[endpoint] = result.schema
+    catch (error) {
+      config.logger.error(`Failed to generate runtime Zod schema for "${result.method} ${result.path}"`)
+      config.logger.debug(error)
+    }
   }
 
   return schemas
+}
+
+/**
+ * Run Zod schema generation from probe results
+ *
+ * @param probeResults Results from probing endpoints
+ * @param config Parsed discovery configuration
+ *
+ * @returns Array of schema results
+ */
+export async function generateZodSchemas(probeResults: ProbeResult[], config: ParsedDiscoverConfig) {
+  if (config.generate?.zod) {
+    await createSchemas(probeResults, config)
+  }
+
+  return createRuntimeSchemas(probeResults, config)
 }

@@ -35,9 +35,12 @@
     "test": "vitest run --coverage",
     "typecheck": "tsc --noEmit --skipLibCheck"
   },
+  "peerDependencies": {
+    "quicktype-core": "^23.2.6"
+  },
   "dependencies": {
     "consola": "^3.4.2",
-    "quicktype-core": "^23.2.6",
+    "defu": "^6.1.4",
     "ufo": "^1.6.1",
     "zod": "^4.1.12",
     "zod-openapi": "^5.4.3"

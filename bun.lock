@@ -5,7 +5,7 @@
       "name": "autodisco",
       "dependencies": {
         "consola": "^3.4.2",
-        "quicktype-core": "^23.2.6",
+        "defu": "^6.1.4",
         "ufo": "^1.6.1",
         "zod": "^4.1.12",
         "zod-openapi": "^5.4.3",
@@ -18,6 +18,9 @@
         "obuild": "^0.2.1",
         "typescript": "^5.9.3",
         "vitest": "^3.2.4",
+      },
+      "peerDependencies": {
+        "quicktype-core": "^23.2.6",
       },
     },
   },
