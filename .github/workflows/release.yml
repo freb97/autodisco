@@ -4,9 +4,14 @@ on:
   release:
     types: [published]
 
+permissions:
+  id-token: write
+  contents: read
+
 jobs:
   lint:
     runs-on: ubuntu-latest
+
     steps:
       - uses: actions/checkout@v5
       - uses: oven-sh/setup-bun@v2
@@ -19,6 +24,7 @@ jobs:
 
   typecheck:
     runs-on: ubuntu-latest
+
     steps:
       - uses: actions/checkout@v5
       - uses: oven-sh/setup-bun@v2
@@ -31,6 +37,7 @@ jobs:
 
   test:
     runs-on: ubuntu-latest
+
     steps:
       - uses: actions/checkout@v5
       - uses: oven-sh/setup-bun@v2
@@ -43,18 +50,15 @@ jobs:
 
   release:
     runs-on: ubuntu-latest
-    env:
-      NUXT_SHOPIFY_DEV_MODULE_ALIAS: false
+
     needs: [lint, typecheck, test]
-    permissions:
-      contents: read
-      id-token: write
+
     steps:
       - uses: actions/checkout@v5
       - uses: oven-sh/setup-bun@v2
       - uses: actions/setup-node@v5
         with:
-          node-version: 22.20.0
+          node-version: v24.10.0
           registry-url: 'https://registry.npmjs.org'
 
       - name: Install dependencies
@@ -65,4 +69,4 @@ jobs:
 
       - name: Release module
         run: |
-          npm publish --provenance --no-git-checks || true
+          npm publish

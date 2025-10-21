@@ -1,0 +1,8 @@
+# 0.0.5
+- Updated configuration options for better flexibility.
+- Added CI configuration for automated testing and deployment.
+- Improved error handling during API probing.
+- Enhanced logging for better debugging and traceability.
+
+# 0.0.1 - 0.0.4
+- Initial releases with basic functionality for probing APIs and generating OpenAPI schemas.
