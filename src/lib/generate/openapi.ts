@@ -38,19 +38,12 @@ function getParams(params?: Record<string, string | number | boolean>, optional 
 function getComponents(schemaResults: SchemaResult[]) {
   const components: ZodOpenApiComponentsObject = {}
 
-  components.responses = {}
+  components.schemas = {}
 
   for (const schemaResult of schemaResults) {
     const name = resolveTypeName(schemaResult.path)
 
-    components.responses[name] = {
-      description: '200 OK',
-      content: {
-        'application/json': {
-          schema: schemaResult.schema,
-        },
-      },
-    }
+    components.schemas[name] = schemaResult.schema
   }
 
   return components
@@ -81,17 +74,7 @@ function getPaths(schemaResults: SchemaResult[], config: ParsedDiscoverConfig) {
             content: {
               'application/json': {
                 schema: {
-                  type: 'object',
-                  properties: {
-                    jobId: {
-                      $ref: `#/components/responses/${name}`,
-                    },
-                    title: {
-                      type: 'string',
-                      description: 'Job title',
-                      example: 'My job',
-                    },
-                  },
+                  $ref: `#/components/schemas/${name}`,
                 },
               },
             },

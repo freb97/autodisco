@@ -32,10 +32,11 @@ describe('openapi schema generation', () => {
     expect(schemaJson).toHaveProperty('openapi', '3.1.1')
 
     expect(schemaJson).toHaveProperty('paths./users/{id}.get')
-    expect(schemaJson).toHaveProperty('components.responses.Users.content.application/json.schema')
+    expect(schemaJson).toHaveProperty('components.schemas.Users')
+    expect(schemaJson).toHaveProperty('components.schemas.Users.type', 'object')
 
     expect(schemaJson).toHaveProperty('paths./products.get')
-    expect(schemaJson).toHaveProperty('components.responses.Products.content.application/json.schema')
+    expect(schemaJson).toHaveProperty('components.schemas.Products.type', 'array')
   })
 
   it('should generate post request schemas', async () => {
@@ -65,7 +66,7 @@ describe('openapi schema generation', () => {
 
     expect(schemaJson).toHaveProperty('openapi', '3.1.1')
     expect(schemaJson).toHaveProperty('paths./users.post')
-    expect(schemaJson).toHaveProperty('components.responses.Users.content.application/json.schema')
+    expect(schemaJson).toHaveProperty('components.schemas.Users.type', 'object')
   })
 
   it('should handle empty probe results', async () => {
