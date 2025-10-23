@@ -2,6 +2,6 @@ import { defineConfig } from 'vitest/config'
 
 export default defineConfig({
   test: {
-    globalSetup: './test/setup/api.ts',
+    globalSetup: './test/setup/global.ts',
   },
 })

@@ -37,10 +37,14 @@ function createProbes(config: ParsedDiscoverConfig) {
           ...(headers ? { headers } : {}),
         }).then(async (response) => {
           if (!response.ok) {
-            config.logger.error(`Received error response fetching "${method} ${path}": ${response.statusText}`)
+            config.logger.error(
+              `Received error response fetching "${method} ${path}": ${response.statusText}`,
+            )
           }
           else {
-            config.logger.debug(`Received success response fetching "${method} ${path}": ${response.statusText}`)
+            config.logger.debug(
+              `Received success response fetching "${method} ${path}": ${response.statusText}`,
+            )
           }
 
           return response.text()
@@ -79,8 +83,8 @@ export async function probeEndpoints(config: ParsedDiscoverConfig) {
   return Promise.all(probes).then(results => results.flatMap((result) => {
     if (result.length > 0) {
       return {
-        method: result[0].method,
-        path: result[0].path,
+        method: result[0]!.method,
+        path: result[0]!.path,
         config: result.reduce((acc, curr) => defu(curr.config, acc), {} as ProbeConfig),
         samples: result.reduce((acc, curr) => acc.concat(curr.samples), [] as string[]),
       }

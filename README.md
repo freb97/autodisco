@@ -63,6 +63,40 @@ await discover({
 
 This will create an OpenAPI schema in `.autodisco/openapi/schema.json`.
 
+### Generating TypeScript Types
+
+If you also want to generate TypeScript types for the probed endpoints, you can enable the `typescript` option in the `generate` configuration:
+
+```ts
+import discover from 'autodisco'
+
+await discover({
+  baseUrl: 'https://jsonplaceholder.typicode.com',
+
+  probes: {
+    get: { '/todos': {} },
+  },
+
+  generate: {
+    typescript: true,
+  },
+})
+```
+
+This will create TypeScript types in the `.autodisco/typescript` directory in addition to the OpenAPI schema:
+
+```
+.autodisco/
+├── openapi/
+│   └── schema.json
+└── typescript/
+    └── types.d.ts
+```
+
+> [!NOTE]
+> Make sure to install `openapi-typescript` if you want to use TypeScript type generation:
+> `npm install openapi-typescript`
+
 ### Generating Zod Schemas
 
 If you also want to generate Zod schemas for the probed endpoints, you can enable the `zod` option in the `generate` configuration:
@@ -124,7 +158,8 @@ The `discover` function accepts a configuration object with the following values
 - `clear`: Whether to clear the output directory before generating files (`boolean`, default: `true`).
 - `logger`: Custom configuration for the logger ([Consola options](https://github.com/unjs/consola), optional).
 - `generate`: Options to customize code generation (optional)
-  - `zod`: Whether to generate Zod schemas (boolean, default: `false`).
+  - `zod`: Whether to generate Zod schemas (`boolean | generateZodOptions`, optional).
+  - `typescript`: Whether to generate TypeScript types (`boolean | generateTypescriptOptions`, optional).
 
 ### Probe configuration
 
@@ -140,7 +175,8 @@ Probes supports the following options:
 
 This project is heavily inspired by and built with the following libraries:
 - [zod-openapi](https://github.com/samchungy/zod-openapi)
-- [quicktype](https://quicktype.io/)
+- [openapi-typescript](https://github.com/openapi-ts/openapi-typescript)
+- [quicktype](https://github.com/glideapps/quicktype)
 
 ## 📜 License
 

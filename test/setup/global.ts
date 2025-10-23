@@ -1,4 +1,4 @@
-import createTestAPI from '../fixture/api'
+import createTestAPI from './fixture/api'
 
 let api: ReturnType<typeof createTestAPI>
 

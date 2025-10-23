@@ -27,6 +27,7 @@ export const probeConfigSchema = z.object({
   body: z.any().optional(),
 })
 
+type test = 'typescript-zod'
 /**
  * Schema for the main discover configuration
  */
@@ -34,12 +35,16 @@ export const discoverConfigSchema = z.object({
   outputDir: z.string().optional(),
   baseUrl: z.string().optional(),
   headers: httpHeadersSchema.optional(),
-  probes: z.partialRecord(httpMethodSchema, z.record(z.string(), z.union([probeConfigSchema, z.array(probeConfigSchema)]))),
+  probes: z.partialRecord(
+    httpMethodSchema,
+    z.record(z.string(), z.union([probeConfigSchema, z.array(probeConfigSchema)])),
+  ),
+  generate: z.object({
+    zod: z.union([z.boolean(), z.object<import('quicktype-core').RendererOptions<test>>()]).optional(),
+    typescript: z.union([z.boolean(), z.object<import('openapi-typescript').OpenAPITSOptions>()]).optional(),
+  }).optional(),
   clear: z.boolean().optional(),
   minify: z.boolean().optional(),
-  generate: z.object({
-    zod: z.boolean().optional(),
-  }).optional(),
   logger: z.any().optional(),
 })
 
@@ -49,8 +54,8 @@ export const discoverConfigSchema = z.object({
 export const discoverConfigSchemaWithDefaults = discoverConfigSchema.omit({
   outputDir: true,
   probes: true,
+  generate: true,
   clear: true,
-  minify: true,
   logger: true,
 }).extend({
   outputDir: discoverConfigSchema.shape.outputDir.default('.autodisco'),
@@ -72,8 +77,17 @@ export const discoverConfigSchemaWithDefaults = discoverConfigSchema.omit({
 
     return transformed
   }),
+  generate: discoverConfigSchema.shape.generate.transform((generate) => {
+    return {
+      zod: typeof generate?.zod === 'object'
+        ? generate.zod as import('quicktype-core').RendererOptions<'typescript-zod'>
+        : generate?.zod ?? false,
+      typescript: typeof generate?.typescript === 'object'
+        ? generate.typescript as import('openapi-typescript').OpenAPITSOptions
+        : generate?.typescript ?? false,
+    }
+  }),
   clear: discoverConfigSchema.shape.clear.default(true),
-  minify: discoverConfigSchema.shape.minify.default(false),
   logger: discoverConfigSchema.shape.logger.transform(logger => createConsola(logger)),
 })
 

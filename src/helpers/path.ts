@@ -14,11 +14,13 @@ export function resolvePath(path: string, config: ProbeConfig): string {
   let resolvedPath = path
 
   if (config.params) {
+    // Replace path parameters with their values, e.g., /users/{id} -> /users/1
     for (const [key, value] of Object.entries(config.params)) {
       resolvedPath = resolvedPath.replace(`{${key}}`, encodeURIComponent(value))
     }
   }
 
+  // Append query parameters if present, e.g., /users -> /users?active=true
   if (config.query) {
     resolvedPath = withQuery(resolvedPath, config.query)
   }
@@ -34,19 +36,19 @@ export function resolvePath(path: string, config: ProbeConfig): string {
  * @returns The resolved type name
  */
 export function resolveTypeName(path: string) {
-  let resolvedPath = path
+  let resolvedTypeName = path
 
-  resolvedPath = withoutLeadingSlash(withoutTrailingSlash(
-    resolvedPath
+  resolvedTypeName = withoutLeadingSlash(withoutTrailingSlash(
+    resolvedTypeName
       .replaceAll(/\{[^}]+\}/g, '') // Remove params, e.g., /auth/users/{id} -> /auth/users/
       .split('?')[0], // Remove query, e.g., /auth/users/?active=true -> /auth/users/
   ))
 
   // Convert to camel case, e.g., auth/users -> AuthUsers
-  resolvedPath = resolvedPath
+  resolvedTypeName = resolvedTypeName
     .split('/')
     .map(segment => segment.charAt(0).toUpperCase() + segment.slice(1))
     .join('')
 
-  return resolvedPath
+  return resolvedTypeName
 }

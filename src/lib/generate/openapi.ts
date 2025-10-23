@@ -1,8 +1,8 @@
 import type { ZodOpenApiComponentsObject, ZodOpenApiPathsObject } from 'zod-openapi'
 
 import type { ParsedDiscoverConfig } from '../config'
-
 import type { SchemaResult } from './zod'
+
 import { writeFile } from 'node:fs/promises'
 import { joinURL } from 'ufo'
 import { z } from 'zod'
@@ -63,11 +63,24 @@ function getPaths(schemaResults: SchemaResult[], config: ParsedDiscoverConfig) {
 
     paths[schemaResult.path] = {
       [method.toLowerCase()]: {
-        requestParams: {
-          ...(params ? { path: params } : {}),
-          ...(query ? { query } : {}),
-          ...(headers ? { headers } : {}),
-        },
+        ...(params || query || headers
+          ? { requestParams: {
+              ...(params ? { path: params } : {}),
+              ...(query ? { query } : {}),
+              ...(headers ? { headers } : {}),
+            } }
+          : {}),
+
+        ...(schemaResult.bodySchema
+          ? { requestBody: {
+              content: {
+                'application/json': {
+                  schema: schemaResult.bodySchema,
+                },
+              },
+            } }
+          : {}),
+
         responses: {
           200: {
             description: '200 OK',
@@ -118,5 +131,9 @@ export async function generateOpenApiSchema(schemaResults: SchemaResult[], confi
     paths,
   })
 
-  await writeFile(joinURL(config.outputDir, 'openapi/schema.json'), JSON.stringify(document, undefined, config.minify ? 0 : 2))
+  const jsonDocument = JSON.stringify(document, undefined, config.minify ? 0 : 2)
+
+  await writeFile(joinURL(config.outputDir, 'openapi/schema.json'), jsonDocument)
+
+  return jsonDocument
 }

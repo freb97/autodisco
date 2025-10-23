@@ -38,7 +38,7 @@ export default function createTestAPI(port = 3456) {
       return
     }
 
-    // GET /users/:id - Single user
+    // GET /users/{id} - Single user
     if (method === 'GET' && url.match(/^\/users\/\d+$/)) {
       res.writeHead(200)
       res.end(JSON.stringify({
@@ -58,16 +58,47 @@ export default function createTestAPI(port = 3456) {
           id: 'prod-1',
           name: 'Laptop',
           price: 999.99,
-          inStock: true,
+          stock: 4,
           tags: ['electronics', 'computers'],
         },
         {
           id: 'prod-2',
           name: 'Mouse',
           price: 29.99,
-          inStock: false,
-          tags: ['electronics', 'accessories'],
+          stock: 22,
+          tags: ['electronics', 'accessories', 'gaming'],
         },
+        {
+          id: 'prod-3',
+          name: 'Keyboard',
+          price: 69.99,
+          stock: 34,
+          tags: ['electronics', 'accessories', 'gaming'],
+        },
+      ]))
+      return
+    }
+
+    // GET /empty - Empty response
+    if (method === 'GET' && url === '/empty') {
+      res.writeHead(200)
+      res.end('')
+      return
+    }
+
+    // GET /suggest?q=wireless - Array of suggestions (product | category | searchTerm)[]
+    if (method === 'GET' && url.startsWith('/suggest')) {
+      res.writeHead(200)
+      res.end(JSON.stringify([
+        { productId: 'prod-1', name: 'Laptop' },
+        { productId: 'prod-2', name: 'Mouse' },
+        { productId: 'prod-3', name: 'Keyboard' },
+        { categoryId: 'cat-1', name: 'Computers' },
+        { categoryId: 'cat-2', name: 'Accessories' },
+        { categoryId: 'cat-3', name: 'Keyboards' },
+        { searchTerm: 'wireless mouse' },
+        { searchTerm: 'wireless keyboard' },
+        { searchTerm: 'wireless headset' },
       ]))
       return
     }

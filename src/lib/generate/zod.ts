@@ -25,7 +25,7 @@ export interface SchemaResult {
  * @returns Merged JSON object
  */
 function mergeSamples(samples: string[]) {
-  const base = JSON.parse(samples[0])
+  const base = JSON.parse(samples?.[0] ?? '{}')
 
   return samples.slice(1).reduce((acc, sample) => {
     const value = JSON.parse(sample)
@@ -68,8 +68,8 @@ async function createSchemas(probeResults: ProbeResult[], config: ParsedDiscover
 
     // Convert Map values to array
     return Promise.all(Array.from(groupedResults.values()).map(async (group) => {
-      const name = resolveTypeName(group[0].path)
-      const method = group[0].method
+      const name = resolveTypeName(group[0]!.path)
+      const method = group[0]!.method
 
       const inputData = new quickType.InputData()
 
@@ -86,11 +86,7 @@ async function createSchemas(probeResults: ProbeResult[], config: ParsedDiscover
         const result = await quickType.quicktype({
           inputData,
           lang: 'typescript-zod',
-          rendererOptions: {
-            'just-types': 'true',
-            'prefer-unions': 'true',
-            'prefer-const-values': 'false',
-          },
+          rendererOptions: typeof config.generate?.zod === 'object' ? config.generate.zod : {},
         })
 
         await mkdir(joinURL(config.outputDir, 'zod', method), { recursive: true })
@@ -100,7 +96,7 @@ async function createSchemas(probeResults: ProbeResult[], config: ParsedDiscover
           ))
       }
       catch (error) {
-        config.logger.error(`Failed to generate Zod schema for ${method} ${group[0].path}`)
+        config.logger.error(`Failed to generate Zod schema for ${method} ${group[0]!.path}`)
         config.logger.debug(error)
       }
     }))
