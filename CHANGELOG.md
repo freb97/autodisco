@@ -1,3 +1,7 @@
+# 0.1.0
+- Added typescript type generation
+- Added body schema inferring
+
 # 0.0.6
 - Added schema entries to the OpenAPI output for better clarity.
 - Fixed minor bugs in the probing logic.
