@@ -27,7 +27,6 @@ export const probeConfigSchema = z.object({
   body: z.any().optional(),
 })
 
-type test = 'typescript-zod'
 /**
  * Schema for the main discover configuration
  */
@@ -40,7 +39,7 @@ export const discoverConfigSchema = z.object({
     z.record(z.string(), z.union([probeConfigSchema, z.array(probeConfigSchema)])),
   ),
   generate: z.object({
-    zod: z.union([z.boolean(), z.object<import('quicktype-core').RendererOptions<test>>()]).optional(),
+    zod: z.union([z.boolean(), z.object<import('quicktype-core').RendererOptions<'typescript-zod'>>()]).optional(),
     typescript: z.union([z.boolean(), z.object<import('openapi-typescript').OpenAPITSOptions>()]).optional(),
   }).optional(),
   clear: z.boolean().optional(),
