@@ -1,3 +1,6 @@
+# 0.1.1
+- Added support for discriminated unions in array samples
+
 # 0.1.0
 - Added typescript type generation
 - Added body schema inferring
