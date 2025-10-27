@@ -8,6 +8,21 @@ function getSchemaHash(schema: z.ZodType): string {
   return createHash('sha256').update(JSON.stringify(schema.def)).digest('hex')
 }
 
+function getUniqueSchemas(value: any[], discriminatorKey?: string): Map<string, z.ZodType> {
+  const uniqueSchemas = new Map<string, z.ZodType>()
+  for (const item of value) {
+    const schema = inferZodSchemaFromValue(item)
+    if (discriminatorKey && schema instanceof z.ZodObject) {
+      schema.shape[discriminatorKey] = z.literal(item[discriminatorKey])
+    }
+    const hash = getSchemaHash(schema)
+    if (!uniqueSchemas.has(hash)) {
+      uniqueSchemas.set(hash, schema)
+    }
+  }
+  return uniqueSchemas
+}
+
 /**
  * Recursively infers a Zod schema from a given value
  */
@@ -21,26 +36,43 @@ export function inferZodSchemaFromValue(value: any): z.ZodType {
       return z.array(z.any())
     }
 
-    const schemas = value.map(item => inferZodSchemaFromValue(item))
+    if (value.length === 1) {
+      return z.array(inferZodSchemaFromValue(value[0]!))
+    }
 
-    // Deduplicate schemas using hash-based lookup
-    const schemaMap = new Map<string, z.ZodType>()
-    for (const schema of schemas) {
-      const hash = getSchemaHash(schema)
-      if (!schemaMap.has(hash)) {
-        schemaMap.set(hash, schema)
+    const discriminatorCandidates = new Set<string>()
+    for (const key of Object.keys(value[0]!)) {
+      if (value.every(item => item && typeof item === 'object' && key in item && typeof item[key] !== 'object')) {
+        discriminatorCandidates.add(key)
       }
     }
 
-    const uniqueSchemas = Array.from(schemaMap.values())
+    const uniqueSchemas = getUniqueSchemas(value)
 
-    // If all elements have the same schema, return array of that type
-    if (uniqueSchemas.length === 1) {
-      return z.array(uniqueSchemas[0]!)
+    if (uniqueSchemas.size === 1) {
+      return z.array(uniqueSchemas.values().next().value!)
     }
 
-    // If multiple different schemas, create a union
-    return z.array(z.union(uniqueSchemas as [z.ZodType, z.ZodType, ...z.ZodType[]]))
+    if (discriminatorCandidates.size === 0) {
+      return z.array(z.union(Array.from(uniqueSchemas.values()) as [z.ZodType, z.ZodType, ...z.ZodType[]]))
+    }
+
+    for (const discriminator of discriminatorCandidates) {
+      const groupedByDiscriminator = value.reduce((acc, item) => {
+        const key = item[discriminator]
+        if (!acc[key]) {
+          acc[key] = []
+        }
+        acc[key].push(item)
+        return acc
+      }, {} as Record<string, any[]>)
+
+      if (Object.keys(groupedByDiscriminator).length === uniqueSchemas.size) {
+        return z.array(z.union(Array.from(getUniqueSchemas(value, discriminator).values()) as [z.ZodType, z.ZodType, ...z.ZodType[]]))
+      }
+    }
+
+    return z.array(z.union(Array.from(uniqueSchemas.values()) as [z.ZodType, z.ZodType, ...z.ZodType[]]))
   }
 
   // Iterate over all object properties and infer their schemas

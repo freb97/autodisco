@@ -74,12 +74,13 @@ describe('openapi schema generation', () => {
     expect(schemaJson).toHaveProperty('components.schemas.Users.properties.id.type', 'number')
   })
 
-  it('should handle array schemas with different item types', async () => {
+  it('should handle discriminated array schemas', async () => {
     const { baseUrl, outputDir } = getTestBaseConfig()
 
     await discover({
       baseUrl,
       outputDir,
+      generate: { zod: true },
       probes: {
         get: {
           '/suggest': {
@@ -103,6 +104,10 @@ describe('openapi schema generation', () => {
     expect(schemaJson).toHaveProperty('components.schemas.Suggest.type', 'array')
     expect(schemaJson).toHaveProperty('components.schemas.Suggest.items.anyOf')
     expect(schemaJson.components.schemas.Suggest.items.anyOf).toHaveLength(3)
+
+    expect(schemaJson.components.schemas.Suggest.items.anyOf[0]).toHaveProperty('properties.type.const', 'product')
+    expect(schemaJson.components.schemas.Suggest.items.anyOf[1]).toHaveProperty('properties.type.const', 'category')
+    expect(schemaJson.components.schemas.Suggest.items.anyOf[2]).toHaveProperty('properties.type.const', 'searchTerm')
   })
 
   it('should handle empty probe config', async () => {

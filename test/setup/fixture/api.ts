@@ -90,15 +90,15 @@ export default function createTestAPI(port = 3456) {
     if (method === 'GET' && url.startsWith('/suggest')) {
       res.writeHead(200)
       res.end(JSON.stringify([
-        { productId: 'prod-1', name: 'Laptop' },
-        { productId: 'prod-2', name: 'Mouse' },
-        { productId: 'prod-3', name: 'Keyboard' },
-        { categoryId: 'cat-1', name: 'Computers' },
-        { categoryId: 'cat-2', name: 'Accessories' },
-        { categoryId: 'cat-3', name: 'Keyboards' },
-        { searchTerm: 'wireless mouse' },
-        { searchTerm: 'wireless keyboard' },
-        { searchTerm: 'wireless headset' },
+        { type: 'product', productId: 'prod-1', name: 'Laptop', price: { currency: 'USD', amount: 999.99 } },
+        { type: 'product', productId: 'prod-2', name: 'Mouse', price: { currency: 'USD', amount: 29.99 } },
+        { type: 'product', productId: 'prod-3', name: 'Keyboard', price: { currency: 'USD', amount: 69.99 } },
+        { type: 'category', categoryId: 'cat-1', name: 'Computers' },
+        { type: 'category', categoryId: 'cat-2', name: 'Accessories' },
+        { type: 'category', categoryId: 'cat-3', name: 'Keyboards' },
+        { type: 'searchTerm', searchTerm: 'wireless mouse' },
+        { type: 'searchTerm', searchTerm: 'wireless keyboard' },
+        { type: 'searchTerm', searchTerm: 'wireless headset' },
       ]))
       return
     }
