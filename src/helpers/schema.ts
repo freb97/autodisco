@@ -3,14 +3,26 @@ import { z } from 'zod'
 
 /**
  * Create a fast hash of a Zod schema definition for comparison
+ *
+ * @param schema Zod schema to hash
+ *
+ * @returns Hash string
  */
 function getSchemaHash(schema: z.ZodType): string {
   return createHash('sha256').update(JSON.stringify(schema.def)).digest('hex')
 }
 
-function getUniqueSchemas(value: any[], discriminatorKey?: string): Map<string, z.ZodType> {
+/**
+ * Infers unique Zod schemas from a given array of values
+ *
+ * @param values Array of values to infer schemas from
+ * @param discriminatorKey Optional discriminator key for union types
+ *
+ * @returns A map of unique Zod schemas
+ */
+function inferUniqueArraySchemas(values: any[], discriminatorKey?: string): Map<string, z.ZodType> {
   const uniqueSchemas = new Map<string, z.ZodType>()
-  for (const item of value) {
+  for (const item of values) {
     const schema = inferZodSchemaFromValue(item)
     if (discriminatorKey && schema instanceof z.ZodObject) {
       schema.shape[discriminatorKey] = z.literal(item[discriminatorKey])
@@ -25,6 +37,10 @@ function getUniqueSchemas(value: any[], discriminatorKey?: string): Map<string, 
 
 /**
  * Recursively infers a Zod schema from a given value
+ *
+ * @param value Object to infer the schema from
+ *
+ * @returns Inferred Zod schema
  */
 export function inferZodSchemaFromValue(value: any): z.ZodType {
   if (value === null) {
@@ -47,7 +63,7 @@ export function inferZodSchemaFromValue(value: any): z.ZodType {
       }
     }
 
-    const uniqueSchemas = getUniqueSchemas(value)
+    const uniqueSchemas = inferUniqueArraySchemas(value)
 
     if (uniqueSchemas.size === 1) {
       return z.array(uniqueSchemas.values().next().value!)
@@ -68,7 +84,7 @@ export function inferZodSchemaFromValue(value: any): z.ZodType {
       }, {} as Record<string, any[]>)
 
       if (Object.keys(groupedByDiscriminator).length === uniqueSchemas.size) {
-        return z.array(z.union(Array.from(getUniqueSchemas(value, discriminator).values()) as [z.ZodType, z.ZodType, ...z.ZodType[]]))
+        return z.array(z.union(Array.from(inferUniqueArraySchemas(value, discriminator).values()) as [z.ZodType, z.ZodType, ...z.ZodType[]]))
       }
     }
 
