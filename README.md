@@ -1,11 +1,9 @@
-# AutoDisco
+# 🪩 AutoDisco
 
 [![Github Actions][github-actions-src]][github-actions-href]
 [![NPM version][npm-version-src]][npm-version-href]
 [![NPM last update][npm-last-update-src]][npm-last-update-href]
 [![License][license-src]][license-href]
-
-🪩 Use legacy APIs with confidence
 
 AutoDisco is a tool for automatic discovery of REST APIs that do not provide an OpenAPI specification themselves.
 It generates an OpenAPI schema by inferring request and response structures from user-defined probes.
