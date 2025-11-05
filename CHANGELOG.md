@@ -1,3 +1,6 @@
+# 0.2.0
+- Added hooks support for custom logic during the probing process
+
 # 0.1.1
 - Added support for discriminated unions in array samples
 
