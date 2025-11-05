@@ -1,4 +1,9 @@
+import type { ConsolaOptions } from 'consola'
+import type { ZodType } from 'zod'
+
+import type { ZodOpenApiComponentsObject, ZodOpenApiPathsObject } from 'zod-openapi'
 import { createConsola } from 'consola'
+import { Hookable } from 'hookable'
 import { z } from 'zod'
 
 /**
@@ -44,7 +49,8 @@ export const discoverConfigSchema = z.object({
   }).optional(),
   clear: z.boolean().optional(),
   minify: z.boolean().optional(),
-  logger: z.any().optional(),
+  logger: z.any().transform(v => v as Partial<ConsolaOptions>).optional(),
+  hooks: z.any().transform(v => v as Partial<DiscoverHooks>).optional(),
 })
 
 /**
@@ -56,6 +62,7 @@ export const discoverConfigSchemaWithDefaults = discoverConfigSchema.omit({
   generate: true,
   clear: true,
   logger: true,
+  hooks: true,
 }).extend({
   outputDir: discoverConfigSchema.shape.outputDir.default('.autodisco'),
   probes: discoverConfigSchema.shape.probes.transform((probes) => {
@@ -88,6 +95,15 @@ export const discoverConfigSchemaWithDefaults = discoverConfigSchema.omit({
   }),
   clear: discoverConfigSchema.shape.clear.default(true),
   logger: discoverConfigSchema.shape.logger.transform(logger => createConsola(logger)),
+  hooks: discoverConfigSchema.shape.hooks.transform((hooks) => {
+    const hookable = new Hookable<DiscoverHooks>()
+    if (hooks) {
+      for (const [hookName, hookFn] of Object.entries(hooks)) {
+        hookable.hook(hookName as keyof typeof hooks, hookFn)
+      }
+    }
+    return hookable
+  }),
 })
 
 /**
@@ -114,3 +130,41 @@ export type DiscoverConfig = z.infer<typeof discoverConfigSchema>
  * Parsed discovery configuration with defaults applied
  */
 export type ParsedDiscoverConfig = z.infer<typeof discoverConfigSchemaWithDefaults>
+
+export type HookResult = Promise<void> | void
+
+export interface SchemaResult {
+  method: HttpMethod
+  path: string
+  config: ProbeConfig
+  schema: ZodType
+  bodySchema?: ZodType
+}
+
+export interface ProbeResult {
+  method: HttpMethod
+  path: string
+  config: ProbeConfig & { baseUrl?: string }
+  samples: string[]
+}
+
+export interface DiscoverHooks {
+  'discovery:start': (config: ParsedDiscoverConfig) => HookResult
+  'discovery:completed': (config: ParsedDiscoverConfig, totalTime: number, totalProbingTime: number) => HookResult
+
+  'probe:request': (method: HttpMethod, path: string, probeConfig: ProbeConfig & { baseUrl?: string }) => HookResult
+  'probe:response': (method: HttpMethod, path: string, probeConfig: ProbeConfig & { baseUrl?: string }, response: string) => HookResult
+  'probes:completed': (config: ParsedDiscoverConfig, results: ProbeResult[]) => HookResult
+
+  'zod:generate': (method: HttpMethod, name: string, inputData: any, rendererOptions: any) => HookResult
+  'zod:generated': (config: ParsedDiscoverConfig) => HookResult
+
+  'zod:runtime:generate': (method: HttpMethod, path: string, config: ProbeResult['config'], sample: any) => HookResult
+  'zod:runtime:generated': (config: ParsedDiscoverConfig, results: SchemaResult[]) => HookResult
+
+  'openapi:generate': (config: ParsedDiscoverConfig, components: ZodOpenApiComponentsObject, paths: ZodOpenApiPathsObject) => HookResult
+  'openapi:generated': (config: ParsedDiscoverConfig, result: string) => HookResult
+
+  'typescript:generate': (config: ParsedDiscoverConfig, openapiTSOptions: any) => HookResult
+  'typescript:generated': (config: ParsedDiscoverConfig, result: string) => HookResult
+}

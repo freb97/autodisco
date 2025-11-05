@@ -44,17 +44,28 @@ export default async function discover(config: DiscoverConfig) {
 
   const parsedConfig = discoverConfigSchemaWithDefaults.parse(config)
 
-  const probeResults = await prepare(parsedConfig)
-    .then(() => probeEndpoints(parsedConfig))
+  await parsedConfig.hooks.callHook('discovery:start', parsedConfig)
+
+  const probeResults = await prepare(parsedConfig).then(() => probeEndpoints(parsedConfig))
 
   const probingCompletedTime = performance.now()
 
-  await generateZodSchemas(probeResults, parsedConfig)
-    .then(schemaResults => generateOpenApiSchema(schemaResults, parsedConfig)
-      .then(openapiResult => generateTypeScriptTypes(openapiResult, parsedConfig)))
+  await parsedConfig.hooks.callHook('probes:completed', parsedConfig, probeResults)
+
+  const schemaResults = await generateZodSchemas(probeResults, parsedConfig)
+
+  await parsedConfig.hooks.callHook('zod:runtime:generated', parsedConfig, schemaResults)
+
+  const openapiResult = await generateOpenApiSchema(schemaResults, parsedConfig)
+
+  await parsedConfig.hooks.callHook('openapi:generated', parsedConfig, openapiResult)
+
+  await generateTypeScriptTypes(openapiResult, parsedConfig)
 
   const totalTime = Math.ceil(performance.now() - startTime)
   const totalProbingTime = Math.ceil(probingCompletedTime - startTime)
+
+  await parsedConfig.hooks.callHook('discovery:completed', parsedConfig, totalTime, totalProbingTime)
 
   parsedConfig.logger.success(`Discovery completed in ${totalTime} ms (probing took ${totalProbingTime} ms)`)
 }

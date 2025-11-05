@@ -1,16 +1,9 @@
-import type { HttpMethod, ParsedDiscoverConfig, ProbeConfig } from './config'
+import type { HttpMethod, ParsedDiscoverConfig, ProbeConfig, ProbeResult } from './config'
 
 import { defu } from 'defu'
 import { joinURL } from 'ufo'
 
 import { resolvePath } from '../helpers/path'
-
-export interface ProbeResult {
-  method: HttpMethod
-  path: string
-  config: ProbeConfig
-  samples: string[]
-}
 
 /**
  * Create probes for all endpoints defined in the configuration
@@ -20,39 +13,53 @@ export interface ProbeResult {
  * @returns Array of promises for probe results
  */
 function createProbes(config: ParsedDiscoverConfig) {
-  async function create(method: HttpMethod, path: string, probeConfigs: ProbeConfig[]) {
+  async function create(method: HttpMethod, path: string, probeConfigs: (ProbeConfig & { baseUrl?: string })[]) {
     const results: ProbeResult[] = []
 
     for (const probeConfig of probeConfigs) {
-      const headers = { ...config.headers, ...probeConfig.headers }
-      const body = probeConfig.body
+      const parsedProbeConfig = {
+        baseUrl: config.baseUrl,
+
+        ...probeConfig,
+
+        headers: {
+          ...config.headers,
+          ...probeConfig.headers,
+        },
+      }
+
+      await config.hooks.callHook('probe:request', method, path, parsedProbeConfig)
+
+      const response = await fetch(joinURL(parsedProbeConfig.baseUrl ?? '', resolvePath(path, parsedProbeConfig)), {
+        method,
+        ...(parsedProbeConfig.body ? { body: parsedProbeConfig.body } : {}),
+        ...(parsedProbeConfig.headers ? { headers: parsedProbeConfig.headers } : {}),
+      }).then(async (response) => {
+        if (!response.ok) {
+          config.logger.error(
+            `Received error response fetching "${method} ${path}": ${response.statusText}`,
+          )
+        }
+        else {
+          config.logger.debug(
+            `Received success response fetching "${method} ${path}": ${response.statusText}`,
+          )
+        }
+
+        return response.text()
+      }).catch((error) => {
+        config.logger.error(`Network error fetching "${method} ${path}"`)
+        config.logger.debug(error)
+        return ''
+      })
+
+      await config.hooks.callHook('probe:response', method, path, probeConfig, response)
 
       results.push({
         method,
         path,
         config: probeConfig,
-        samples: [await fetch(joinURL(config.baseUrl ?? '', resolvePath(path, probeConfig)), {
-          method,
-          ...(body ? { body } : {}),
-          ...(headers ? { headers } : {}),
-        }).then(async (response) => {
-          if (!response.ok) {
-            config.logger.error(
-              `Received error response fetching "${method} ${path}": ${response.statusText}`,
-            )
-          }
-          else {
-            config.logger.debug(
-              `Received success response fetching "${method} ${path}": ${response.statusText}`,
-            )
-          }
-
-          return response.text()
-        }).catch((error) => {
-          config.logger.error(`Network error fetching "${method} ${path}"`)
-          config.logger.debug(error)
-          return ''
-        })],
+        samples: [response],
       })
     }
 

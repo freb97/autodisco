@@ -1,5 +1,4 @@
-import type { HttpMethod, ParsedDiscoverConfig, ProbeConfig } from '../config'
-import type { ProbeResult } from '../probe'
+import type { ParsedDiscoverConfig, ProbeConfig, ProbeResult, SchemaResult } from '../config'
 
 import { mkdir, writeFile } from 'node:fs/promises'
 import defu from 'defu'
@@ -8,14 +7,6 @@ import { z } from 'zod'
 
 import { resolveTypeName } from '../../helpers/path'
 import { inferZodSchemaFromValue } from '../../helpers/schema'
-
-export interface SchemaResult {
-  method: HttpMethod
-  path: string
-  config: ProbeConfig
-  schema: z.ZodType
-  bodySchema?: z.ZodType
-}
 
 /**
  * Merge multiple JSON samples into a single JSON object
@@ -82,11 +73,15 @@ async function createSchemas(probeResults: ProbeResult[], config: ParsedDiscover
 
       inputData.addInput(jsonInput)
 
+      const rendererOptions = typeof config.generate?.zod === 'object' ? config.generate.zod : {}
+
+      await config.hooks.callHook('zod:generate', method, name, inputData, rendererOptions)
+
       try {
         const result = await quickType.quicktype({
           inputData,
           lang: 'typescript-zod',
-          rendererOptions: typeof config.generate?.zod === 'object' ? config.generate.zod : {},
+          rendererOptions,
         })
 
         await mkdir(joinURL(config.outputDir, 'zod', method), { recursive: true })
@@ -100,7 +95,7 @@ async function createSchemas(probeResults: ProbeResult[], config: ParsedDiscover
         config.logger.debug(error)
       }
     }))
-  }).catch((error) => {
+  }).then(async () => await config.hooks.callHook('zod:generated', config)).catch((error) => {
     throw new Error('quicktype-core is required to generate Zod schemas.\nYou can install it with: npm install quicktype-core', { cause: error })
   })
 }
@@ -113,7 +108,7 @@ async function createSchemas(probeResults: ProbeResult[], config: ParsedDiscover
  *
  * @returns Array of schema results
  */
-function createRuntimeSchemas(probeResults: ProbeResult[], config: ParsedDiscoverConfig) {
+async function createRuntimeSchemas(probeResults: ProbeResult[], config: ParsedDiscoverConfig) {
   const getBodySchema = (config: ProbeConfig) => {
     if (!config.body) {
       return undefined
@@ -128,12 +123,19 @@ function createRuntimeSchemas(probeResults: ProbeResult[], config: ParsedDiscove
 
   for (const result of probeResults) {
     try {
+      const method = result.method
+      const path = result.path
+      const schemaConfig = result.config
+      const sample = mergeSamples(result.samples)
+
+      await config.hooks.callHook('zod:runtime:generate', method, path, schemaConfig, sample)
+
       schemas.push({
-        method: result.method,
-        path: result.path,
-        config: result.config,
-        schema: inferZodSchemaFromValue(mergeSamples(result.samples)),
-        bodySchema: getBodySchema(result.config),
+        method,
+        path,
+        config: schemaConfig,
+        schema: inferZodSchemaFromValue(sample),
+        bodySchema: getBodySchema(schemaConfig),
       })
     }
     catch (error) {

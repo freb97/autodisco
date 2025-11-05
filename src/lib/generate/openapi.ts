@@ -1,7 +1,6 @@
 import type { ZodOpenApiComponentsObject, ZodOpenApiPathsObject } from 'zod-openapi'
 
-import type { ParsedDiscoverConfig } from '../config'
-import type { SchemaResult } from './zod'
+import type { ParsedDiscoverConfig, SchemaResult } from '../config'
 
 import { writeFile } from 'node:fs/promises'
 import { joinURL } from 'ufo'
@@ -109,6 +108,8 @@ function getPaths(schemaResults: SchemaResult[], config: ParsedDiscoverConfig) {
 export async function generateOpenApiSchema(schemaResults: SchemaResult[], config: ParsedDiscoverConfig) {
   const components: ZodOpenApiComponentsObject = getComponents(schemaResults)
   const paths: ZodOpenApiPathsObject = getPaths(schemaResults, config)
+
+  await config.hooks.callHook('openapi:generate', config, components, paths)
 
   const document = createDocument({
     openapi: '3.1.1',

@@ -15,11 +15,15 @@ export async function generateTypeScriptTypes(openApiResult: string, config: Par
       openapiTSOptions = config.generate.typescript
     }
 
+    await config.hooks.callHook('typescript:generate', config, openapiTSOptions)
+
     const ast = await openapiTS.default(openApiResult, openapiTSOptions)
-    const contents = openapiTS.astToString(ast)
+    const result = openapiTS.astToString(ast)
+
+    await config.hooks.callHook('typescript:generated', config, result)
 
     await mkdir(joinURL(config.outputDir, 'typescript'), { recursive: true })
-      .then(() => writeFile(joinURL(config.outputDir, 'typescript', 'types.d.ts'), contents))
+      .then(() => writeFile(joinURL(config.outputDir, 'typescript', 'types.d.ts'), result))
   }).catch((error) => {
     throw new Error('openapi-typescript is required to generate TypeScript types.\nYou can install it with: npm install openapi-typescript', { cause: error })
   })

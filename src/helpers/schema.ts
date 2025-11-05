@@ -22,16 +22,20 @@ function getSchemaHash(schema: z.ZodType): string {
  */
 function inferUniqueArraySchemas(values: any[], discriminatorKey?: string): Map<string, z.ZodType> {
   const uniqueSchemas = new Map<string, z.ZodType>()
+
   for (const item of values) {
     const schema = inferZodSchemaFromValue(item)
+    const hash = getSchemaHash(schema)
+
     if (discriminatorKey && schema instanceof z.ZodObject) {
       schema.shape[discriminatorKey] = z.literal(item[discriminatorKey])
     }
-    const hash = getSchemaHash(schema)
+
     if (!uniqueSchemas.has(hash)) {
       uniqueSchemas.set(hash, schema)
     }
   }
+
   return uniqueSchemas
 }
 
@@ -56,17 +60,18 @@ export function inferZodSchemaFromValue(value: any): z.ZodType {
       return z.array(inferZodSchemaFromValue(value[0]!))
     }
 
-    const discriminatorCandidates = new Set<string>()
-    for (const key of Object.keys(value[0]!)) {
-      if (value.every(item => item && typeof item === 'object' && key in item && typeof item[key] !== 'object')) {
-        discriminatorCandidates.add(key)
-      }
-    }
-
     const uniqueSchemas = inferUniqueArraySchemas(value)
 
     if (uniqueSchemas.size === 1) {
       return z.array(uniqueSchemas.values().next().value!)
+    }
+
+    const discriminatorCandidates = new Set<string>()
+
+    for (const key of Object.keys(value[0]!)) {
+      if (value.every(item => item && typeof item === 'object' && key in item && typeof item[key] !== 'object' && item[key] !== '')) {
+        discriminatorCandidates.add(key)
+      }
     }
 
     if (discriminatorCandidates.size === 0) {
@@ -76,10 +81,13 @@ export function inferZodSchemaFromValue(value: any): z.ZodType {
     for (const discriminator of discriminatorCandidates) {
       const groupedByDiscriminator = value.reduce((acc, item) => {
         const key = item[discriminator]
+
         if (!acc[key]) {
           acc[key] = []
         }
+
         acc[key].push(item)
+
         return acc
       }, {} as Record<string, any[]>)
 
@@ -94,9 +102,11 @@ export function inferZodSchemaFromValue(value: any): z.ZodType {
   // Iterate over all object properties and infer their schemas
   if (typeof value === 'object') {
     const shape: Record<string, any> = {}
+
     for (const [key, val] of Object.entries(value)) {
       shape[key] = inferZodSchemaFromValue(val)
     }
+
     return z.object(shape)
   }
 
