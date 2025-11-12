@@ -5,7 +5,7 @@ dist
 .DS_Store
 .eslintcache
 *.log*
-*.env*
+*.env
 
 # Generated files
 .autodisco

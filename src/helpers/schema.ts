@@ -13,6 +13,96 @@ function getSchemaHash(schema: z.ZodType): string {
 }
 
 /**
+ * Merges multiple Zod schemas into one
+ *
+ * @param schemas Array of Zod schemas to merge
+ *
+ * @returns Merged Zod schema
+ *
+ * @example
+ * ```typescript
+ * const schema1 = z.object({ a: z.string(), b: z.object({ foo: z.string() }), c: z.number() });
+ * const schema2 = z.object({ a: z.string(), b: z.object({ foo: z.string(), bar: z.string() }) });
+ *
+ * const mergedSchema = mergeSchemas([schema1, schema2]);
+ *
+ * // Resulting schema will be:
+ * // z.object({
+ * //   a: z.string(),
+ * //   b: z.object({ foo: z.string(), bar: z.string().optional() }),
+ * //   c: z.number().optional()
+ * // });
+ * ```
+ */
+function mergeSchemas(schemas: z.ZodType[]): z.ZodType {
+  const objectSchemas = schemas.filter(schema => schema instanceof z.ZodObject) as z.ZodObject<any>[]
+
+  if (objectSchemas.length === 0) {
+    return schemas[0] || z.unknown()
+  }
+
+  if (objectSchemas.length === 1) {
+    return objectSchemas[0]!
+  }
+
+  const allProperties = new Map<string, { schemas: z.ZodTypeAny[], count: number }>()
+
+  for (const schema of objectSchemas) {
+    for (const [key, value] of Object.entries(schema.shape)) {
+      const zodValue = value as z.ZodTypeAny
+      if (!allProperties.has(key)) {
+        allProperties.set(key, { schemas: [zodValue], count: 1 })
+      }
+      else {
+        const prop = allProperties.get(key)!
+        prop.schemas.push(zodValue)
+        prop.count++
+      }
+    }
+  }
+
+  const mergedShape: Record<string, z.ZodTypeAny> = {}
+
+  for (const [key, { schemas: propSchemas, count }] of allProperties) {
+    let mergedProp: z.ZodTypeAny
+
+    const areAllObjects = propSchemas.every(s => s instanceof z.ZodObject)
+
+    if (areAllObjects && propSchemas.length > 1) {
+      mergedProp = mergeSchemas(propSchemas)
+    }
+    else if (propSchemas.length === 1) {
+      mergedProp = propSchemas[0]!
+    }
+    else {
+      const hashes = propSchemas.map(s => getSchemaHash(s))
+      const uniqueHashes = new Set(hashes)
+
+      if (uniqueHashes.size === 1) {
+        mergedProp = propSchemas[0]!
+      }
+      else {
+        try {
+          mergedProp = z.union(propSchemas as [z.ZodTypeAny, z.ZodTypeAny, ...z.ZodTypeAny[]])
+        }
+        catch {
+          mergedProp = propSchemas[0]!
+        }
+      }
+    }
+
+    if (count === objectSchemas.length) {
+      mergedShape[key] = mergedProp
+    }
+    else {
+      mergedShape[key] = mergedProp.optional()
+    }
+  }
+
+  return z.object(mergedShape)
+}
+
+/**
  * Infers unique Zod schemas from a given array of values
  *
  * @param values Array of values to infer schemas from
@@ -75,7 +165,7 @@ export function inferZodSchemaFromValue(value: any): z.ZodType {
     }
 
     if (discriminatorCandidates.size === 0) {
-      return z.array(z.union(Array.from(uniqueSchemas.values()) as [z.ZodType, z.ZodType, ...z.ZodType[]]))
+      return z.array(mergeSchemas(Array.from(uniqueSchemas.values())))
     }
 
     for (const discriminator of discriminatorCandidates) {
@@ -96,7 +186,7 @@ export function inferZodSchemaFromValue(value: any): z.ZodType {
       }
     }
 
-    return z.array(z.union(Array.from(uniqueSchemas.values()) as [z.ZodType, z.ZodType, ...z.ZodType[]]))
+    return z.array(mergeSchemas(Array.from(uniqueSchemas.values())))
   }
 
   // Iterate over all object properties and infer their schemas
