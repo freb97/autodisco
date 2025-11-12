@@ -1,3 +1,6 @@
+# 0.3.0
+- Updated array schema creation algorithm
+
 # 0.2.0
 - Added hooks support for custom logic during the probing process
 
