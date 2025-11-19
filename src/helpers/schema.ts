@@ -82,12 +82,11 @@ function mergeSchemas(schemas: z.ZodType[]): z.ZodType {
         mergedProp = propSchemas[0]!
       }
       else {
-        try {
-          mergedProp = z.union(propSchemas as [z.ZodTypeAny, z.ZodTypeAny, ...z.ZodTypeAny[]])
-        }
-        catch {
-          mergedProp = propSchemas[0]!
-        }
+        mergedProp = areAllObjects
+          ? mergeSchemas(propSchemas)
+          : propSchemas.every(s => s instanceof z.ZodArray)
+            ? z.array(mergeSchemas(propSchemas.map(s => (s as z.ZodArray<any>).element).filter(Boolean)))
+            : z.union(propSchemas)
       }
     }
 

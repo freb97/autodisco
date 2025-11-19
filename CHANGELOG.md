@@ -1,3 +1,6 @@
+# 0.4.0
+- Updated array schema nested object merging
+
 # 0.3.0
 - Updated array schema creation algorithm
 
