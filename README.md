@@ -170,6 +170,97 @@ Probes supports the following options:
 - `body`: An object containing the request body (for POST, PUT, PATCH requests, optional).
 - `headers`: An object containing headers to include in the request (optional, overrides default headers).
 
+## Discovery
+
+The discovery process involves sending HTTP requests to the specified endpoints using the provided probes.
+The responses are analyzed to infer the structure of the API, which is then used to generate an OpenAPI schema.
+If enabled, TypeScript types and Zod schemas are also generated based on the inferred structures.
+
+When all probes are completed, their responses will be converted to Zod schemas at runtime to
+ensure an accurate representation of the data structures and to circumvent any serialization issues.
+After that, the OpenAPI schema will be generated using the inferred runtime schemas with [zod-openapi](https://github.com/samchungy/zod-openapi)
+in the `${outputDir}/openapi` directory.
+
+If TypeScript type generation is enabled, the OpenAPI schema will be converted to TypeScript types
+using [openapi-typescript](https://github.com/openapi-ts/openapi-typescript) in the `${outputDir}/typescript` directory.
+
+If Zod schema generation is enabled, additional Zod schemas will be generated as files using [quicktype](https://github.com/quicktype/quicktype)
+in the `${outputDir}/zod` directory.
+
+### Schema Inference
+
+The schema inference process breaks a response down by first identifying the primitive data types (string, number, boolean, null)
+and then combining them into more complex structures such as arrays and objects.
+
+Arrays are inferred by examining the elements within the array and determining a common schema that encompasses all elements.
+If the elements have varying structures, all possible schemas are searched for a common discriminator, such as a shared
+property name with different values.
+If a common discriminator is found and the number of unique schemas matches the number of available discriminators, the array
+will be typed as a discriminated union.
+When no common structure can be found, the array is inferred to contain a single object with optional properties representing 
+all possible fields.
+
+Objects are inferred by analyzing each property and determining its type based on the values present in the responses.
+If a property is missing in some responses, it is marked as optional.
+
+### Examples
+
+Given the following responses from probing an endpoint:
+
+```json
+{
+  "users": [
+    { "id": 1, "name": "Alice", "role": "admin", "extra": "data" },
+    { "id": 2, "name": "Bob", "role": "user" },
+    { "id": 3, "name": "Charlie", "role": "guest" }
+  ]
+}
+```
+
+The inferred schema would be:
+
+```ts
+{
+  id: number;
+  name: string;
+  role: string;
+  extra: string | undefined;
+}[]
+```
+
+If the responses were more varied and provide a unique key for each unique kind of schema, the inference
+will detect it as a discriminated union such as:
+
+```json
+{
+  "users": [
+    { "id": 1, "name": "Alice", "role": "admin" },
+    { "id": 2, "name": "Bob", "role": "editor", "permissions": ["read", "write"] },
+    { "id": 3, "name": "Charlie", "role": "guest", "extra": "data" }
+  ]
+}
+```
+
+With the inferred schema being:
+
+```ts
+({
+  id: number;
+  name: string;
+  role: "admin";
+} | {
+  id: number;
+  name: string;
+  role: "editor";
+  permissions: string[];
+} | {
+  id: number;
+  name: string;
+  role: "guest";
+  extra: string;
+})[]
+```
+
 ### Hooks Reference
 
 The `hooks` configuration allows you to customize the discovery process by providing functions that are called at specific points during execution.
