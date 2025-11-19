@@ -197,7 +197,7 @@ If the elements have varying structures, all possible schemas are searched for a
 property name with different values.
 If a common discriminator is found and the number of unique schemas matches the number of available discriminators, the array
 will be typed as a discriminated union.
-When no common structure can be found, the array is inferred to contain a single object with optional properties representing 
+When no common structure can be found, the array is inferred to contain a single object with optional properties representing
 all possible fields.
 
 Objects are inferred by analyzing each property and determining its type based on the values present in the responses.
@@ -220,11 +220,11 @@ Given the following responses from probing an endpoint:
 The inferred schema would be:
 
 ```ts
-{
-  id: number;
-  name: string;
-  role: string;
-  extra: string | undefined;
+type Response = {
+  id: number
+  name: string
+  role: string
+  extra: string | undefined
 }[]
 ```
 
@@ -244,20 +244,20 @@ will detect it as a discriminated union such as:
 With the inferred schema being:
 
 ```ts
-({
-  id: number;
-  name: string;
-  role: "admin";
+type Response = ({
+  id: number
+  name: string
+  role: 'admin'
 } | {
-  id: number;
-  name: string;
-  role: "editor";
-  permissions: string[];
+  id: number
+  name: string
+  role: 'editor'
+  permissions: string[]
 } | {
-  id: number;
-  name: string;
-  role: "guest";
-  extra: string;
+  id: number
+  name: string
+  role: 'guest'
+  extra: string
 })[]
 ```
 
