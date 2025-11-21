@@ -61,6 +61,32 @@ await discover({
 
 This will create an OpenAPI schema in `.autodisco/openapi/schema.json`.
 
+### CLI Usage
+
+You can also use AutoDisco via the command line interface (CLI).
+First, create a configuration file, e.g. `autodisco.config.{js,ts,mjs,cjs}`:
+
+```ts
+export default {
+  baseUrl: 'https://jsonplaceholder.typicode.com',
+
+  probes: {
+    get: {
+      '/todos': {},
+      '/posts': {},
+    },
+  },
+}
+```
+
+Then run the `autodisco` command in your terminal:
+
+```sh
+npx autodisco
+```
+
+This will create an OpenAPI schema in `.autodisco/openapi/schema.json`.
+
 ### Generating TypeScript Types
 
 If you also want to generate TypeScript types for the probed endpoints, you can enable the `typescript` option in the `generate` configuration:

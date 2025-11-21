@@ -21,6 +21,9 @@
     ".": "./dist/index.mjs"
   },
   "types": "./dist/index.d.mts",
+  "bin": {
+    "discover": "dist/commands/discover.mjs"
+  },
   "files": [
     "dist"
   ],
@@ -42,6 +45,8 @@
     "quicktype-core": "^23.2.6"
   },
   "dependencies": {
+    "c12": "^3.3.2",
+    "citty": "^0.1.6",
     "consola": "^3.4.2",
     "defu": "^6.1.4",
     "hookable": "^5.5.3",
