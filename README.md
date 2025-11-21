@@ -59,7 +59,7 @@ await discover({
 })
 ```
 
-This will create an OpenAPI schema in `.autodisco/openapi/schema.json`.
+This will create an OpenAPI schema in `autodisco/openapi/schema.json`.
 
 ### CLI Usage
 
@@ -85,7 +85,7 @@ Then run the `autodisco` command in your terminal:
 npx autodisco
 ```
 
-This will create an OpenAPI schema in `.autodisco/openapi/schema.json`.
+This will create an OpenAPI schema in `autodisco/openapi/schema.json`.
 
 ### Generating TypeScript Types
 
@@ -107,10 +107,10 @@ await discover({
 })
 ```
 
-This will create TypeScript types in the `.autodisco/typescript` directory in addition to the OpenAPI schema:
+This will create TypeScript types in the `autodisco/typescript` directory in addition to the OpenAPI schema:
 
 ```
-.autodisco/
+autodisco/
 ├── openapi/
 │   └── schema.json
 └── typescript/
@@ -153,10 +153,10 @@ await discover({
 })
 ```
 
-This will create Zod schemas in the `.autodisco/zod` directory in addition to the OpenAPI schema:
+This will create Zod schemas in the `autodisco/zod` directory in addition to the OpenAPI schema:
 
 ```
-.autodisco/
+autodisco/
 ├── openapi/
 │   └── schema.json
 └── zod/
@@ -175,7 +175,7 @@ This will create Zod schemas in the `.autodisco/zod` directory in addition to th
 The `discover` function accepts a configuration object with the following values:
 
 - `baseUrl`: The base URL for the API (`string`, optional).
-- `outputDir`: The directory to output the generated files (`string`, default: `.autodisco`).
+- `outputDir`: The directory to output the generated files (`string`, default: `autodisco`).
 - `probes`: An object containing endpoints to probe (`ProbeConfig`, required).
 - `headers`: An object containing headers to include in all requests (`Record<string, string>, optional`).
 - `minify`: Whether to minify the generated OpenAPI schema (`boolean`, default: `false`).

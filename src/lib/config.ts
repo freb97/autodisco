@@ -64,7 +64,7 @@ export const discoverConfigSchemaWithDefaults = discoverConfigSchema.omit({
   logger: true,
   hooks: true,
 }).extend({
-  outputDir: discoverConfigSchema.shape.outputDir.default('.autodisco'),
+  outputDir: discoverConfigSchema.shape.outputDir.default('autodisco'),
   probes: discoverConfigSchema.shape.probes.transform((probes) => {
     const transformed: Record<string, Record<string, ProbeConfig[]>> = {}
 
