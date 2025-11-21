@@ -1,3 +1,6 @@
+# 0.4.1
+- Added usage via CLI
+
 # 0.4.0
 - Updated array schema nested object merging
 

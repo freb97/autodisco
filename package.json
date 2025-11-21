@@ -1,7 +1,7 @@
 {
   "name": "autodisco",
   "type": "module",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "Automatically generate OpenAPI schemas by probing RESTful APIs",
   "author": "Frederik Bußmann <frederik@bussmann.io>",
   "license": "MIT",
