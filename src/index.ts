@@ -70,4 +70,13 @@ export default async function discover(config: DiscoverConfig) {
   parsedConfig.logger.success(`Discovery completed in ${totalTime} ms (probing took ${totalProbingTime} ms)`)
 }
 
-export type { DiscoverConfig, ProbeConfig } from './lib/config'
+export type {
+  DiscoverConfig,
+  DiscoverHooks,
+  HookResult,
+  HttpHeaders,
+  HttpMethod,
+  ProbeConfig,
+  ProbeResult,
+  SchemaResult,
+} from './lib/config'

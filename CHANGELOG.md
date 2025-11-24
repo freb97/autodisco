@@ -1,3 +1,6 @@
+# 0.4.3
+- Included all types in default export
+
 # 0.4.2
 - Updated default output directory
 
