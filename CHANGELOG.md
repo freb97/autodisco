@@ -1,3 +1,6 @@
+# 0.4.4
+- Bumped dependencies
+
 # 0.4.3
 - Included all types in default export
 
