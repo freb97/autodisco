@@ -2,9 +2,8 @@
 
 pkgs.mkShell {
     buildInputs = [
+        pkgs.nodejs
         pkgs.bun
         pkgs.git
-        pkgs.nodejs
-        pkgs.nodePackages.vercel
     ];
 }
