@@ -44,6 +44,7 @@ export const discoverConfigSchema = z.object({
     z.record(z.string(), z.union([probeConfigSchema, z.array(probeConfigSchema)])),
   ),
   generate: z.object({
+    json: z.boolean().optional(),
     zod: z.union([z.boolean(), z.object<import('quicktype-core').RendererOptions<'typescript-zod'>>()]).optional(),
     typescript: z.union([z.boolean(), z.object<import('openapi-typescript').OpenAPITSOptions>()]).optional(),
   }).optional(),
@@ -85,6 +86,7 @@ export const discoverConfigSchemaWithDefaults = discoverConfigSchema.omit({
   }),
   generate: discoverConfigSchema.shape.generate.transform((generate) => {
     return {
+      json: generate?.json ?? false,
       zod: typeof generate?.zod === 'object'
         ? generate.zod as import('quicktype-core').RendererOptions<'typescript-zod'>
         : generate?.zod ?? false,
@@ -161,6 +163,9 @@ export interface DiscoverHooks {
 
   'zod:runtime:generate': (method: HttpMethod, path: string, config: ProbeResult['config'], sample: any) => HookResult
   'zod:runtime:generated': (config: ParsedDiscoverConfig, results: SchemaResult[]) => HookResult
+
+  'json:generate': (config: ParsedDiscoverConfig, components: { name: string, schema: z.ZodType }[]) => HookResult
+  'json:generated': (config: ParsedDiscoverConfig, result: { name: string, schema: string }[]) => HookResult
 
   'openapi:generate': (config: ParsedDiscoverConfig, components: ZodOpenApiComponentsObject, paths: ZodOpenApiPathsObject) => HookResult
   'openapi:generated': (config: ParsedDiscoverConfig, result: string) => HookResult

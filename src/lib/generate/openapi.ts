@@ -112,10 +112,12 @@ function getPaths(schemaResults: SchemaResult[], config: ParsedDiscoverConfig) {
  *
  * @param schemaResults Array of schema results
  * @param config Parsed discovery configuration
+ *
+ * @return Generated OpenAPI schema as JSON string
  */
 export async function generateOpenApiSchema(schemaResults: SchemaResult[], config: ParsedDiscoverConfig) {
-  const components: ZodOpenApiComponentsObject = getComponents(schemaResults)
-  const paths: ZodOpenApiPathsObject = getPaths(schemaResults, config)
+  const components = getComponents(schemaResults)
+  const paths = getPaths(schemaResults, config)
 
   await config.hooks.callHook('openapi:generate', config, components, paths)
 

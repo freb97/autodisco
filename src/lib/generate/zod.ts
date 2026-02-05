@@ -100,17 +100,18 @@ async function createRuntimeSchemas(probeResults: ProbeResult[], config: ParsedD
       const method = result.method
       const path = result.path
       const schemaConfig = result.config
+      const samples = result.samples
 
-      const samples = result.samples.map(sample => inferFromValue(JSON.parse(sample)))
-      const sample = merge(samples)
+      await config.hooks.callHook('zod:runtime:generate', method, path, schemaConfig, samples)
 
-      await config.hooks.callHook('zod:runtime:generate', method, path, schemaConfig, sample)
+      const inferredSchemas = result.samples.map(sample => inferFromValue(JSON.parse(sample)))
+      const schema = merge(inferredSchemas)
 
       schemas.push({
         method,
         path,
         config: schemaConfig,
-        schema: sample,
+        schema,
         bodySchema: getBodySchema(schemaConfig),
       })
     }

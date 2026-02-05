@@ -1,6 +1,7 @@
 import type { DiscoverConfig } from './lib/config'
 
 import { discoverConfigSchemaWithDefaults } from './lib/config'
+import { generateJsonSchema } from './lib/generate/json'
 import { generateOpenApiSchema } from './lib/generate/openapi'
 import { generateTypeScriptTypes } from './lib/generate/typescript'
 import { generateZodSchemas } from './lib/generate/zod'
@@ -60,6 +61,7 @@ export default async function discover(config: DiscoverConfig) {
 
   await parsedConfig.hooks.callHook('openapi:generated', parsedConfig, openapiResult)
 
+  await generateJsonSchema(schemaResults, parsedConfig)
   await generateTypeScriptTypes(openapiResult, parsedConfig)
 
   const totalTime = Math.ceil(performance.now() - startTime)
