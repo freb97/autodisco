@@ -1,3 +1,8 @@
+# 1.0.0
+- Added JSON Schema generation support
+- Updated OpenAPI generation to include more components
+- Bumped dependencies
+
 # 0.4.4
 - Bumped dependencies
 
