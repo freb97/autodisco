@@ -80,7 +80,6 @@ describe('openapi schema generation', () => {
     await discover({
       baseUrl,
       outputDir,
-      generate: { zod: true },
       probes: {
         get: {
           '/suggest': {

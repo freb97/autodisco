@@ -1,37 +1,11 @@
 import type { ParsedDiscoverConfig, ProbeConfig, ProbeResult, SchemaResult } from '../config'
 
 import { mkdir, writeFile } from 'node:fs/promises'
-import defu from 'defu'
 import { joinURL } from 'ufo'
 import { z } from 'zod'
 
 import { resolveTypeName } from '../../helpers/path'
-import { inferFromValue } from '../parse/schema'
-
-/**
- * Merge multiple JSON samples into a single JSON object
- *
- * @param samples JSON samples to merge
- *
- * @returns Merged JSON object
- */
-function mergeSamples(samples: string[]) {
-  const base = JSON.parse(samples?.[0] ?? '{}')
-
-  return samples.slice(1).reduce((acc, sample) => {
-    const value = JSON.parse(sample)
-
-    if (Array.isArray(value) && Array.isArray(acc)) {
-      return acc.concat(value)
-    }
-    else if (typeof value === 'object' && typeof acc === 'object') {
-      return defu(value, acc)
-    }
-    else {
-      throw new TypeError('Incompatible sample types for merging')
-    }
-  }, base)
-}
+import { inferFromValue, merge } from '../parse/schema'
 
 /**
  * Create Zod schemas from probe results using Quicktype
@@ -126,7 +100,9 @@ async function createRuntimeSchemas(probeResults: ProbeResult[], config: ParsedD
       const method = result.method
       const path = result.path
       const schemaConfig = result.config
-      const sample = mergeSamples(result.samples)
+
+      const samples = result.samples.map(sample => inferFromValue(JSON.parse(sample)))
+      const sample = merge(samples)
 
       await config.hooks.callHook('zod:runtime:generate', method, path, schemaConfig, sample)
 
@@ -134,7 +110,7 @@ async function createRuntimeSchemas(probeResults: ProbeResult[], config: ParsedD
         method,
         path,
         config: schemaConfig,
-        schema: inferFromValue(sample),
+        schema: sample,
         bodySchema: getBodySchema(schemaConfig),
       })
     }
