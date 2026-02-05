@@ -48,6 +48,14 @@ function getComponents(schemaResults: SchemaResult[]) {
   return components
 }
 
+/**
+ * Get OpenAPI paths from schema results and configuration
+ *
+ * @param schemaResults Array of schema results
+ * @param config Parsed discovery configuration
+ *
+ * @returns OpenAPI paths object
+ */
 function getPaths(schemaResults: SchemaResult[], config: ParsedDiscoverConfig) {
   const paths: ZodOpenApiPathsObject = {}
 

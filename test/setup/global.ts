@@ -1,15 +1,15 @@
+import type { TestProject } from 'vitest/node'
+
 import createTestAPI from './fixture/api'
 
-let api: ReturnType<typeof createTestAPI>
-
-export async function setup() {
-  api = createTestAPI()
+export default async function setup(project: TestProject) {
+  const api = createTestAPI()
 
   await api.start()
-}
 
-export async function teardown() {
-  if (api) {
+  project.provide('apiPort', api.port)
+
+  return async function teardown() {
     await api.stop()
   }
 }

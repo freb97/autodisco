@@ -6,7 +6,7 @@ import { joinURL } from 'ufo'
 import { z } from 'zod'
 
 import { resolveTypeName } from '../../helpers/path'
-import { inferZodSchemaFromValue } from '../../helpers/schema'
+import { inferFromValue } from '../parse/schema'
 
 /**
  * Merge multiple JSON samples into a single JSON object
@@ -114,7 +114,7 @@ async function createRuntimeSchemas(probeResults: ProbeResult[], config: ParsedD
       return undefined
     }
 
-    const schema = inferZodSchemaFromValue(config.body)
+    const schema = inferFromValue(config.body)
 
     return schema instanceof z.ZodObject ? schema.partial() : schema
   }
@@ -134,7 +134,7 @@ async function createRuntimeSchemas(probeResults: ProbeResult[], config: ParsedD
         method,
         path,
         config: schemaConfig,
-        schema: inferZodSchemaFromValue(sample),
+        schema: inferFromValue(sample),
         bodySchema: getBodySchema(schemaConfig),
       })
     }
