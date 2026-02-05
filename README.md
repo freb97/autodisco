@@ -121,6 +121,51 @@ autodisco/
 > Make sure to install `openapi-typescript` if you want to use TypeScript type generation:
 > `npm install openapi-typescript`
 
+### Generating JSON Schemas
+
+If you want to generate JSON Schemas for the probed endpoints, you can enable the `json` option in the `generate` configuration:
+
+```ts
+import discover from 'autodisco'
+
+await discover({
+  baseUrl: 'https://jsonplaceholder.typicode.com',
+
+  probes: {
+    get: {
+      '/todos': {},
+    },
+
+    post: {
+      '/users': {
+        body: {
+          name: 'John Doe',
+          username: 'johndoe',
+          email: 'johndoe@example.com',
+        },
+      },
+    },
+  },
+
+  generate: {
+    json: true,
+  },
+})
+```
+
+This will create JSON schemas in the `autodisco/json` directory in addition to the OpenAPI schema:
+
+```
+autodisco/
+├── openapi/
+│   └── schema.json
+└── json/
+    ├── get/
+    │   └── Todos.json
+    └── post/
+        └── Users.json
+```
+
 ### Generating Zod Schemas
 
 If you also want to generate Zod schemas for the probed endpoints, you can enable the `zod` option in the `generate` configuration:
@@ -303,6 +348,8 @@ The `hooks` configuration allows you to customize the discovery process by provi
 | `zod:runtime:generated` | `config`, `results`                              | Called after runtime Zod schemas have been generated  |
 | `openapi:generate`      | `config`, `components`, `paths`                  | Called before generating the OpenAPI schema           |
 | `openapi:generated`     | `config`, `result`                               | Called after the OpenAPI schema has been generated    |
+| `json:generate`         | `config`, `components`                           | Called before generating the JSON schema              |
+| `json:generated`        | `config`, `result`                               | Called after the JSON schema has been generated       |
 | `typescript:generate`   | `config`, `openapiTSOptions`                     | Called before generating TypeScript types             |
 | `typescript:generated`  | `config`, `result`                               | Called after TypeScript types have been generated     |
 | `discovery:completed`   | `config`, `totalTime`, `totalProbingTime`        | Called when the entire discovery process is completed |
@@ -313,7 +360,7 @@ This project is heavily inspired by and built with the following libraries:
 - [zod-openapi](https://github.com/samchungy/zod-openapi)
 - [openapi-typescript](https://github.com/openapi-ts/openapi-typescript)
 
-## 📜 License
+## License
 
 Published under the [MIT License](https://github.com/freb97/autodisco/tree/main/LICENSE).
 

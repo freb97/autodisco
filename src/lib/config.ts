@@ -164,8 +164,8 @@ export interface DiscoverHooks {
   'zod:runtime:generate': (method: HttpMethod, path: string, config: ProbeResult['config'], sample: any) => HookResult
   'zod:runtime:generated': (config: ParsedDiscoverConfig, results: SchemaResult[]) => HookResult
 
-  'json:generate': (config: ParsedDiscoverConfig, components: { name: string, schema: z.ZodType }[]) => HookResult
-  'json:generated': (config: ParsedDiscoverConfig, result: { name: string, schema: string }[]) => HookResult
+  'json:generate': (config: ParsedDiscoverConfig, components: { name: string, method: HttpMethod, schema: z.ZodType }[]) => HookResult
+  'json:generated': (config: ParsedDiscoverConfig, result: { name: string, method: HttpMethod, schema: string }[]) => HookResult
 
   'openapi:generate': (config: ParsedDiscoverConfig, components: ZodOpenApiComponentsObject, paths: ZodOpenApiPathsObject) => HookResult
   'openapi:generated': (config: ParsedDiscoverConfig, result: string) => HookResult

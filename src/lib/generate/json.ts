@@ -20,19 +20,20 @@ export async function generateJsonSchema(schemaResults: SchemaResult[], config: 
 
   const components = schemaResults.map(result => ({
     name: resolveTypeName(result.path),
+    method: result.method,
     schema: result.schema,
   }))
 
   await config.hooks.callHook('json:generate', config, components)
 
-  const schemas = components.map(({ name, schema }) => ({
-    name,
+  const schemas = components.map(({ schema, ...rest }) => ({
     schema: JSON.stringify(schema.toJSONSchema(), undefined, config.minify ? 0 : 2),
+    ...rest,
   }))
 
-  await mkdir(joinURL(config.outputDir, 'json'), { recursive: true }).then(() =>
-    Promise.all(schemas.map(async ({ name, schema }) =>
-      writeFile(joinURL(config.outputDir, 'json', `${name}.json`), schema))))
+  await Promise.all(schemas.map(async ({ name, method, schema }) =>
+    mkdir(joinURL(config.outputDir, 'json', method), { recursive: true }).then(() =>
+      writeFile(joinURL(config.outputDir, 'json', method, `${name}.json`), schema))))
 
   await config.hooks.callHook('json:generated', config, schemas)
 }
