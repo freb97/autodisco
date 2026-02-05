@@ -10,6 +10,20 @@ import { createDocument } from 'zod-openapi'
 import { resolveTypeName } from '../../helpers/path'
 
 /**
+ * Gets the name of the schema based on the HTTP method and path
+ *
+ * @param schemaResult Schema result to get the name from
+ *
+ * @returns Name of the schema in the format MethodPath, e.g. GetUsers, PostUsers, etc.
+ */
+function getName(schemaResult: SchemaResult) {
+  const method = String(schemaResult.method).charAt(0).toUpperCase() + schemaResult.method.slice(1).toLowerCase()
+  const name = resolveTypeName(schemaResult.path)
+
+  return `${method}${name}`
+}
+
+/**
  * Get path parameters, query parameters, or headers as Zod schemas
  *
  * @param params Parameters to convert
@@ -37,12 +51,27 @@ function getParams(params?: Record<string, string | number | boolean>, optional 
 function getComponents(schemaResults: SchemaResult[]) {
   const components: ZodOpenApiComponentsObject = {}
 
-  components.schemas = {}
-
   for (const schemaResult of schemaResults) {
-    const name = resolveTypeName(schemaResult.path)
+    const name = getName(schemaResult)
 
+    components.schemas ??= {}
     components.schemas[name] = schemaResult.schema
+
+    if (schemaResult.bodySchema) {
+      components.schemas[`${name}RequestBody`] = schemaResult.bodySchema
+    }
+
+    components.responses ??= {}
+    components.responses[`${name}Response`] = {
+      description: '200 OK',
+      content: {
+        'application/json': {
+          schema: {
+            $ref: `#/components/schemas/${name}`,
+          },
+        },
+      },
+    }
   }
 
   return components
@@ -62,7 +91,7 @@ function getPaths(schemaResults: SchemaResult[], config: ParsedDiscoverConfig) {
   for (const schemaResult of schemaResults) {
     const method = schemaResult.method
 
-    const name = resolveTypeName(schemaResult.path)
+    const name = getName(schemaResult)
 
     const params = getParams(schemaResult.config.params)
     const query = getParams(schemaResult.config.query, true)
@@ -82,7 +111,9 @@ function getPaths(schemaResults: SchemaResult[], config: ParsedDiscoverConfig) {
           ? { requestBody: {
               content: {
                 'application/json': {
-                  schema: schemaResult.bodySchema,
+                  schema: {
+                    $ref: `#/components/schemas/${name}RequestBody`,
+                  },
                 },
               },
             } }
@@ -90,14 +121,7 @@ function getPaths(schemaResults: SchemaResult[], config: ParsedDiscoverConfig) {
 
         responses: {
           200: {
-            description: '200 OK',
-            content: {
-              'application/json': {
-                schema: {
-                  $ref: `#/components/schemas/${name}`,
-                },
-              },
-            },
+            $ref: `#/components/responses/${name}Response`,
           },
         },
       },

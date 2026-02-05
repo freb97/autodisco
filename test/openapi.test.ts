@@ -35,11 +35,11 @@ describe('openapi schema generation', () => {
 
     expect(schemaJson).toHaveProperty('paths./users/{id}.get')
     expect(schemaJson).toHaveProperty('paths./users/{id}.get.parameters.0.name', 'id')
-    expect(schemaJson).toHaveProperty('components.schemas.Users.properties.id.type', 'number')
+    expect(schemaJson).toHaveProperty('components.schemas.GetUsers.properties.id.type', 'number')
 
     expect(schemaJson).toHaveProperty('paths./products.get')
-    expect(schemaJson).toHaveProperty('components.schemas.Products.type', 'array')
-    expect(schemaJson).toHaveProperty('components.schemas.Products.items.properties.id.type', 'string')
+    expect(schemaJson).toHaveProperty('components.schemas.GetProducts.type', 'array')
+    expect(schemaJson).toHaveProperty('components.schemas.GetProducts.items.properties.id.type', 'string')
   })
 
   it('should generate post request schemas', async () => {
@@ -70,8 +70,9 @@ describe('openapi schema generation', () => {
     expect(schemaJson).toHaveProperty('openapi', '3.1.1')
     expect(schemaJson).toHaveProperty('paths./users.post')
 
-    expect(schemaJson).toHaveProperty('paths./users.post.requestBody.content.application/json.schema.properties.name.type', 'string')
-    expect(schemaJson).toHaveProperty('components.schemas.Users.properties.id.type', 'number')
+    expect(schemaJson).toHaveProperty('paths./users.post.requestBody.content.application/json.schema.$ref', '#/components/schemas/PostUsersRequestBody')
+    expect(schemaJson).toHaveProperty('components.schemas.PostUsersRequestBody.properties.name.type', 'string')
+    expect(schemaJson).toHaveProperty('components.schemas.PostUsers.properties.id.type', 'number')
   })
 
   it('should handle discriminated array schemas', async () => {
@@ -100,13 +101,13 @@ describe('openapi schema generation', () => {
     expect(schemaJson).toHaveProperty('openapi', '3.1.1')
     expect(schemaJson).toHaveProperty('paths./suggest.get')
 
-    expect(schemaJson).toHaveProperty('components.schemas.Suggest.type', 'array')
-    expect(schemaJson).toHaveProperty('components.schemas.Suggest.items.anyOf')
-    expect(schemaJson.components.schemas.Suggest.items.anyOf).toHaveLength(3)
+    expect(schemaJson).toHaveProperty('components.schemas.GetSuggest.type', 'array')
+    expect(schemaJson).toHaveProperty('components.schemas.GetSuggest.items.anyOf')
+    expect(schemaJson.components.schemas.GetSuggest.items.anyOf).toHaveLength(3)
 
-    expect(schemaJson.components.schemas.Suggest.items.anyOf[0]).toHaveProperty('properties.type.const', 'product')
-    expect(schemaJson.components.schemas.Suggest.items.anyOf[1]).toHaveProperty('properties.type.const', 'category')
-    expect(schemaJson.components.schemas.Suggest.items.anyOf[2]).toHaveProperty('properties.type.const', 'searchTerm')
+    expect(schemaJson.components.schemas.GetSuggest.items.anyOf[0]).toHaveProperty('properties.type.const', 'product')
+    expect(schemaJson.components.schemas.GetSuggest.items.anyOf[1]).toHaveProperty('properties.type.const', 'category')
+    expect(schemaJson.components.schemas.GetSuggest.items.anyOf[2]).toHaveProperty('properties.type.const', 'searchTerm')
   })
 
   it('should handle empty probe config', async () => {
