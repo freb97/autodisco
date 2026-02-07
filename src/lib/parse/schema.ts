@@ -1,5 +1,6 @@
-import { z } from 'zod'
+import type { ParsedDiscoverConfig, ProbeConfig, ProbeResult, SchemaResult } from '../config'
 
+import { z } from 'zod'
 import { getSchemaHash } from '../../helpers/schema'
 
 /**
@@ -218,4 +219,56 @@ export function inferFromValue(value: any): z.ZodType {
     return z.boolean()
 
   return z.unknown()
+}
+
+/**
+ * Create runtime Zod schemas from probe results
+ *
+ * @param probeResults Results from probing endpoints
+ * @param config Parsed discovery configuration
+ *
+ * @returns Array of schema results
+ */
+export async function parseSchemas(probeResults: ProbeResult[], config: ParsedDiscoverConfig) {
+  const getBodySchema = (config: ProbeConfig) => {
+    if (!config.body) {
+      return undefined
+    }
+
+    const schema = inferFromValue(config.body)
+
+    return schema instanceof z.ZodObject ? schema.partial() : schema
+  }
+
+  const schemas: SchemaResult[] = []
+
+  for (const result of probeResults) {
+    try {
+      const method = result.method
+      const path = result.path
+      const schemaConfig = result.config
+      const samples = result.samples
+
+      await config.hooks.callHook('zod:runtime:generate', config, method, path, schemaConfig, samples)
+
+      const inferredSchemas = result.samples.map(sample => inferFromValue(JSON.parse(sample)))
+      const schema = merge(inferredSchemas)
+
+      schemas.push({
+        method,
+        path,
+        config: schemaConfig,
+        schema,
+        bodySchema: getBodySchema(schemaConfig),
+      })
+    }
+    catch (error) {
+      config.logger.error(`Failed to generate runtime Zod schema for "${result.method} ${result.path}"`)
+      config.logger.debug(error)
+    }
+  }
+
+  await config.hooks.callHook('zod:runtime:generated', config, schemas)
+
+  return schemas
 }

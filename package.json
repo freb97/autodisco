@@ -41,8 +41,7 @@
     "typecheck": "tsc --noEmit"
   },
   "peerDependencies": {
-    "openapi-typescript": "^7.10.1",
-    "quicktype-core": "^23.2.6"
+    "openapi-typescript": "^7.10.1"
   },
   "dependencies": {
     "c12": "^3.3.3",

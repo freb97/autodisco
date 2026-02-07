@@ -29,7 +29,7 @@ describe('zod schema generation', () => {
     expect(schemaContent).toContain('"id": z.number(),')
     expect(schemaContent).toContain('"name": z.string(),')
     expect(schemaContent).toContain('"email": z.string(),')
-    expect(schemaContent).toContain('"active": z.boolean(),')
+    expect(schemaContent).toContain('"active": z.boolean()')
   })
 
   it('should generate post response schemas', async () => {
@@ -61,6 +61,37 @@ describe('zod schema generation', () => {
 
     expect(schemaContent).toContain('"id": z.number(),')
     expect(schemaContent).toContain('"success": z.boolean(),')
-    expect(schemaContent).toContain('"message": z.string(),')
+    expect(schemaContent).toContain('"message": z.string()')
+  })
+
+  it('should handle discriminated array schemas', async () => {
+    const { baseUrl, outputDir } = getTestBaseConfig()
+
+    await discover({
+      baseUrl,
+      outputDir,
+      probes: {
+        get: {
+          '/suggest': {
+            query: {
+              q: 'test',
+            },
+          },
+        },
+      },
+      generate: {
+        zod: true,
+      },
+    })
+
+    const schemaStat = await stat(`${outputDir}/zod/get/Suggest.ts`)
+    expect(schemaStat.isFile()).toBe(true)
+
+    const schemaContent = await readFile(`${outputDir}/zod/get/Suggest.ts`, 'utf-8')
+
+    expect(schemaContent).toContain('z.array(z.discriminatedUnion("type", [')
+    expect(schemaContent).toContain('"type": z.literal("product")')
+    expect(schemaContent).toContain('"type": z.literal("category")')
+    expect(schemaContent).toContain('"type": z.literal("searchTerm")')
   })
 })

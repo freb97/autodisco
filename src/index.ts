@@ -5,6 +5,7 @@ import { generateJsonSchema } from './lib/generate/json'
 import { generateOpenApiSchema } from './lib/generate/openapi'
 import { generateTypeScriptTypes } from './lib/generate/typescript'
 import { generateZodSchemas } from './lib/generate/zod'
+import { parseSchemas } from './lib/parse/schema'
 import { probeEndpoints } from './lib/probe'
 import { prepare } from './lib/setup'
 
@@ -53,16 +54,13 @@ export default async function discover(config: DiscoverConfig) {
 
   await parsedConfig.hooks.callHook('probes:completed', parsedConfig, probeResults)
 
-  const schemaResults = await generateZodSchemas(probeResults, parsedConfig)
-
-  await parsedConfig.hooks.callHook('zod:runtime:generated', parsedConfig, schemaResults)
+  const schemaResults = await parseSchemas(probeResults, parsedConfig)
 
   const openapiResult = await generateOpenApiSchema(schemaResults, parsedConfig)
 
-  await parsedConfig.hooks.callHook('openapi:generated', parsedConfig, openapiResult)
-
-  await generateJsonSchema(schemaResults, parsedConfig)
   await generateTypeScriptTypes(openapiResult, parsedConfig)
+  await generateZodSchemas(schemaResults, parsedConfig)
+  await generateJsonSchema(schemaResults, parsedConfig)
 
   const totalTime = Math.ceil(performance.now() - startTime)
   const totalProbingTime = Math.ceil(probingCompletedTime - startTime)

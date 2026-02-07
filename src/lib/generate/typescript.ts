@@ -3,6 +3,12 @@ import type { ParsedDiscoverConfig } from '../config'
 import { mkdir, writeFile } from 'node:fs/promises'
 import { joinURL } from 'ufo'
 
+/**
+ * Generate TypeScript types from OpenAPI schema result
+ *
+ * @param openApiResult OpenAPI schema result as JSON string
+ * @param config Parsed discovery configuration
+ */
 export async function generateTypeScriptTypes(openApiResult: string, config: ParsedDiscoverConfig) {
   if (!config.generate?.typescript) {
     return

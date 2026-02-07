@@ -170,5 +170,7 @@ export async function generateOpenApiSchema(schemaResults: SchemaResult[], confi
 
   await writeFile(joinURL(config.outputDir, 'openapi/schema.json'), jsonDocument)
 
+  await config.hooks.callHook('openapi:generated', config, jsonDocument)
+
   return jsonDocument
 }

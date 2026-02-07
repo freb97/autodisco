@@ -1,3 +1,6 @@
+# 1.0.1
+- Added additional cli arguments for sending a single probe without config file
+
 # 1.0.0
 - Added JSON Schema generation support
 - Updated OpenAPI generation to include more components
