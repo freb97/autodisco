@@ -22,7 +22,7 @@
   },
   "types": "./dist/index.d.mts",
   "bin": {
-    "discover": "dist/commands/discover.mjs"
+    "discover": "dist/cli/index.mjs"
   },
   "files": [
     "dist"

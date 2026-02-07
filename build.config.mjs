@@ -6,7 +6,7 @@ export default defineBuildConfig({
       type: 'bundle',
       input: [
         './src/index.ts',
-        './src/commands/discover.ts',
+        './src/cli/index.ts',
       ],
       dts: true,
     },

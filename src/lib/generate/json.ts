@@ -19,7 +19,7 @@ export async function generateJsonSchema(schemaResults: SchemaResult[], config: 
   }
 
   const components = schemaResults.map(result => ({
-    name: resolveTypeName(result.path),
+    name: resolveTypeName(joinURL(config.baseUrl ?? '', result.path)),
     method: result.method,
     schema: result.schema,
   }))

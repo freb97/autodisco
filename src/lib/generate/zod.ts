@@ -21,7 +21,7 @@ async function createSchemas(probeResults: ProbeResult[], config: ParsedDiscover
 
     // Group probe results by method and name
     for (const probeResult of probeResults) {
-      const name = resolveTypeName(probeResult.path)
+      const name = resolveTypeName(joinURL(config.baseUrl ?? '', probeResult.path))
       const key = `${probeResult.method}:${name}`
 
       if (!groupedResults.has(key)) {
@@ -33,7 +33,7 @@ async function createSchemas(probeResults: ProbeResult[], config: ParsedDiscover
 
     // Convert Map values to array
     return Promise.all(Array.from(groupedResults.values()).map(async (group) => {
-      const name = resolveTypeName(group[0]!.path)
+      const name = resolveTypeName(joinURL(config.baseUrl ?? '', group[0]!.path))
       const method = group[0]!.method
 
       const inputData = new quickType.InputData()

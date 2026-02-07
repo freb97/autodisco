@@ -40,8 +40,9 @@ export function resolveTypeName(path: string) {
 
   resolvedTypeName = withoutLeadingSlash(withoutTrailingSlash(
     resolvedTypeName
+      .replaceAll(/^(?:https?:\/\/)?[^/]+/g, '') // Remove everything until and after the tld, e.g., https://api.example.com/auth/users -> /auth/users
       .replaceAll(/\{[^}]+\}/g, '') // Remove params, e.g., /auth/users/{id} -> /auth/users/
-      .split('?')[0], // Remove query, e.g., /auth/users/?active=true -> /auth/users/
+      .split('?')[0] ?? '', // Remove query, e.g., /auth/users/?active=true -> /auth/users/
   ))
 
   // Convert to camel case, e.g., auth/users -> AuthUsers
