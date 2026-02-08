@@ -1,11 +1,12 @@
-import type { ParsedDiscoverConfig, SchemaResult } from '../config'
+import type { SchemaResult } from '../../types'
+import type { ParsedDiscoverConfig } from '../config'
 
 import { mkdir, writeFile } from 'node:fs/promises'
 import { joinURL } from 'ufo'
 
 import { resolveTypeName } from '../../helpers/path'
-import { buildAST } from './zod/builder'
-import { writeAST } from './zod/writer'
+import { buildAST } from './ast/builder'
+import { writeAST } from './ast/writer'
 
 function generateFile(name: string, schema: string) {
   return `import { z } from 'zod';\n\nexport const ${name} = ${schema};`
@@ -24,15 +25,16 @@ export async function generateZodSchemas(schemaResults: SchemaResult[], config: 
 
   const components = schemaResults.map(result => ({
     name: resolveTypeName(joinURL(config.baseUrl ?? '', result.path)),
+    path: result.path,
     method: result.method,
-    schema: result.schema,
+    output: result.schema,
   }))
 
-  const schemas = await Promise.all(components.map(async ({ schema, ...rest }) => {
-    await config.hooks.callHook('zod:generate', config, rest.method, rest.name, schema)
+  const schemas = await Promise.all(components.map(async ({ output, ...rest }) => {
+    await config.hooks.callHook('zod:generate', config, rest.method, rest.name, output)
 
     return {
-      schema: writeAST(buildAST(schema)),
+      output: writeAST(buildAST(output)),
       ...rest,
     }
   }))
@@ -40,8 +42,10 @@ export async function generateZodSchemas(schemaResults: SchemaResult[], config: 
   await Promise.all(schemas.map(async ({ method }) =>
     mkdir(joinURL(config.outputDir, 'zod', method), { recursive: true })))
 
-  await Promise.all(schemas.map(async ({ name, method, schema }) =>
-    writeFile(joinURL(config.outputDir, 'zod', method, `${name}.ts`), generateFile(name, schema))))
+  await Promise.all(schemas.map(async ({ name, method, output }) =>
+    writeFile(joinURL(config.outputDir, 'zod', method, `${name}.ts`), generateFile(name, output))))
 
   await config.hooks.callHook('zod:generated', config, schemas)
+
+  return schemas
 }

@@ -1,4 +1,5 @@
-import type { HttpMethod, ParsedDiscoverConfig, ProbeConfig, ProbeResult } from './config'
+import type { ProbeResult } from '../types'
+import type { HttpMethod, ParsedDiscoverConfig, ProbeConfig } from './config'
 
 import { defu } from 'defu'
 import { joinURL } from 'ufo'

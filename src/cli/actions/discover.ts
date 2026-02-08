@@ -16,7 +16,7 @@ interface DiscoverArgs {
   params?: string
   body?: string
   headers?: string
-  generate?: 'typescript' | 'json' | 'zod'
+  generate?: string
 }
 
 export async function runFromConfig(args: Pick<DiscoverArgs, 'configPath'>) {
@@ -62,6 +62,8 @@ export async function runFromConfig(args: Pick<DiscoverArgs, 'configPath'>) {
 }
 
 export async function runFromArgs(args: Omit<DiscoverArgs, 'configPath'>) {
+  const generateArgs = args.generate ? args.generate.split(',').map(arg => arg.trim()) : []
+
   const config: DiscoverConfig = {
     baseUrl: args.path,
 
@@ -75,9 +77,17 @@ export async function runFromArgs(args: Omit<DiscoverArgs, 'configPath'>) {
       },
     },
 
-    generate: Object.fromEntries(
-      args.generate ? [[args.generate, true]] : [],
-    ),
+    generate: args.generate
+      ? {
+          openapi: generateArgs.includes('openapi-typescript')
+            ? { typescript: true }
+            : generateArgs.includes('openapi') ? true : undefined,
+          typescript: generateArgs.includes('typescript') ? true : undefined,
+          json: generateArgs.includes('json') ? true : undefined,
+          zod: generateArgs.includes('zod') ? true : undefined,
+          markdown: generateArgs.includes('markdown') ? true : undefined,
+        }
+      : undefined,
   }
 
   await discover(config)

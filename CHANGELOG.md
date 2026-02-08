@@ -1,3 +1,10 @@
+# 2.0.0
+- Added generate option "markdown"
+- Added typescript type generation
+- Moved openapi typescript type generation to a different config option
+- Updated CLI option "generate" to accept multiple values
+- Updated dependencies
+
 # 1.1.0
 - Added additional CLI arguments for sending a single probe without config file
 - Refactored zod schema parsing and generation

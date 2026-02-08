@@ -37,7 +37,7 @@
     "release": "bun test && npm publish && git push --follow-tags",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
-    "test:cleanup": "rm -rf ./test/.outputs",
+    "test:cleanup": "rm -r ./test/.outputs",
     "typecheck": "tsc --noEmit"
   },
   "peerDependencies": {

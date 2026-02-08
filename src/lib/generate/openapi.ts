@@ -1,6 +1,7 @@
 import type { ZodOpenApiComponentsObject, ZodOpenApiPathsObject } from 'zod-openapi'
 
-import type { ParsedDiscoverConfig, SchemaResult } from '../config'
+import type { SchemaResult } from '../../types'
+import type { ParsedDiscoverConfig } from '../config'
 
 import { mkdir, writeFile } from 'node:fs/promises'
 import { joinURL } from 'ufo'
@@ -132,6 +133,39 @@ function getPaths(schemaResults: SchemaResult[], config: ParsedDiscoverConfig) {
 }
 
 /**
+ * Generate TypeScript types from OpenAPI schema result
+ *
+ * @param openApiResult OpenAPI schema result as JSON string
+ * @param config Parsed discovery configuration
+ */
+export async function generateOpenApiTypeScriptTypes(openApiResult: string | undefined, config: ParsedDiscoverConfig) {
+  if (typeof config.generate.openapi !== 'object' || !config.generate.openapi.typescript || !openApiResult) {
+    return
+  }
+
+  return import('openapi-typescript').then(async (openapiTS) => {
+    let openapiTSOptions = {}
+
+    if (typeof config.generate.openapi === 'object' && typeof config.generate.openapi.typescript === 'object') {
+      openapiTSOptions = config.generate.openapi.typescript
+    }
+
+    await config.hooks.callHook('openapi:typescript:generate', config, openapiTSOptions)
+
+    const ast = await openapiTS.default(openApiResult, openapiTSOptions)
+    const result = openapiTS.astToString(ast)
+
+    await config.hooks.callHook('openapi:typescript:generated', config, result)
+
+    await writeFile(joinURL(config.outputDir, 'openapi', 'types.d.ts'), result)
+
+    return result
+  }).catch((error) => {
+    throw new Error('openapi-typescript is required to generate TypeScript types.\nYou can install it with: npm install openapi-typescript', { cause: error })
+  })
+}
+
+/**
  * Generate OpenAPI schema from Zod schema results
  *
  * @param schemaResults Array of schema results
@@ -142,7 +176,7 @@ function getPaths(schemaResults: SchemaResult[], config: ParsedDiscoverConfig) {
 export async function generateOpenApiSchema(schemaResults: SchemaResult[], config: ParsedDiscoverConfig) {
   const noGenerateOptions = Object.values(config.generate).every(v => v === false)
 
-  if (!noGenerateOptions && !config.generate.openapi && !config.generate.typescript) {
+  if (!noGenerateOptions && !config.generate.openapi) {
     return
   }
 
@@ -172,12 +206,14 @@ export async function generateOpenApiSchema(schemaResults: SchemaResult[], confi
     paths,
   })
 
-  const jsonDocument = JSON.stringify(document, undefined, config.minify ? 0 : 2)
+  const openApiDocument = JSON.stringify(document, undefined, config.minify ? 0 : 2)
 
   await mkdir(joinURL(config.outputDir, 'openapi'), { recursive: true })
-    .then(() => writeFile(joinURL(config.outputDir, 'openapi', 'schema.json'), jsonDocument))
+    .then(() => writeFile(joinURL(config.outputDir, 'openapi', 'schema.json'), openApiDocument))
 
-  await config.hooks.callHook('openapi:generated', config, jsonDocument)
+  await config.hooks.callHook('openapi:generated', config, openApiDocument)
 
-  return jsonDocument
+  await generateOpenApiTypeScriptTypes(openApiDocument, config)
+
+  return openApiDocument
 }

@@ -1,6 +1,8 @@
-import type { ParsedDiscoverConfig, ProbeConfig, ProbeResult, SchemaResult } from '../config'
+import type { ProbeResult, SchemaResult } from '../../types'
+import type { ParsedDiscoverConfig, ProbeConfig } from '../config'
 
 import { z } from 'zod'
+
 import { getSchemaHash } from '../../helpers/schema'
 
 /**
@@ -240,9 +242,7 @@ export async function parseSchemas(probeResults: ProbeResult[], config: ParsedDi
       return undefined
     }
 
-    const schema = inferFromValue(config.body)
-
-    return schema instanceof z.ZodObject ? schema.partial() : schema
+    return inferFromValue(config.body)
   }
 
   const schemas: SchemaResult[] = []

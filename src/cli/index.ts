@@ -48,9 +48,8 @@ const command = defineCommand({
     },
 
     generate: {
-      type: 'enum',
-      description: 'Which generators to run on the discovered endpoint. Only works when the path argument is provided.',
-      options: ['typescript', 'json', 'zod'],
+      type: 'string',
+      description: 'Which generators to run on the discovered endpoint. Only works when the path argument is provided. <openapi | openapi-typescript | typescript | json | zod | markdown>',
       required: false,
     },
   },

@@ -1,6 +1,6 @@
 import type { ConsolaOptions } from 'consola'
-import type { ZodType } from 'zod'
-import type { ZodOpenApiComponentsObject, ZodOpenApiPathsObject } from 'zod-openapi'
+
+import type { DiscoverHooks } from '../types'
 
 import { createConsola } from 'consola'
 import { Hookable } from 'hookable'
@@ -44,10 +44,13 @@ export const discoverConfigSchema = z.object({
     z.record(z.string(), z.union([probeConfigSchema, z.array(probeConfigSchema)])),
   ),
   generate: z.object({
-    openapi: z.boolean().optional(),
+    openapi: z.object({
+      typescript: z.union([z.boolean(), z.object<import('openapi-typescript').OpenAPITSOptions>()]).optional(),
+    }).or(z.boolean()).optional(),
     json: z.boolean().optional(),
     zod: z.boolean().optional(),
-    typescript: z.union([z.boolean(), z.object<import('openapi-typescript').OpenAPITSOptions>()]).optional(),
+    markdown: z.boolean().optional(),
+    typescript: z.boolean().optional(),
   }).optional(),
   clear: z.boolean().optional(),
   minify: z.boolean().optional(),
@@ -87,12 +90,13 @@ export const discoverConfigSchemaWithDefaults = discoverConfigSchema.omit({
   }),
   generate: discoverConfigSchema.shape.generate.transform((generate) => {
     return {
-      openapi: generate?.openapi ?? false,
+      openapi: typeof generate?.openapi === 'object' && typeof generate?.openapi?.typescript === 'object'
+        ? { typescript: generate.openapi.typescript as import('openapi-typescript').OpenAPITSOptions }
+        : generate?.openapi ?? false,
       json: generate?.json ?? false,
       zod: generate?.zod ?? false,
-      typescript: typeof generate?.typescript === 'object'
-        ? generate.typescript as import('openapi-typescript').OpenAPITSOptions
-        : generate?.typescript ?? false,
+      markdown: generate?.markdown ?? false,
+      typescript: generate?.typescript ?? false,
     }
   }),
   clear: discoverConfigSchema.shape.clear.default(true),
@@ -132,44 +136,3 @@ export type DiscoverConfig = z.infer<typeof discoverConfigSchema>
  * Parsed discovery configuration with defaults applied
  */
 export type ParsedDiscoverConfig = z.infer<typeof discoverConfigSchemaWithDefaults>
-
-export type HookResult = Promise<void> | void
-
-export interface SchemaResult {
-  method: HttpMethod
-  path: string
-  config: ProbeConfig
-  schema: ZodType
-  bodySchema?: ZodType
-}
-
-export interface ProbeResult {
-  method: HttpMethod
-  path: string
-  config: ProbeConfig & { baseUrl?: string }
-  samples: string[]
-}
-
-export interface DiscoverHooks {
-  'discovery:start': (config: ParsedDiscoverConfig) => HookResult
-  'discovery:completed': (config: ParsedDiscoverConfig, totalTime: number, totalProbingTime: number) => HookResult
-
-  'probe:request': (method: HttpMethod, path: string, probeConfig: ProbeConfig & { baseUrl?: string }) => HookResult
-  'probe:response': (method: HttpMethod, path: string, probeConfig: ProbeConfig & { baseUrl?: string }, response: string) => HookResult
-  'probes:completed': (config: ParsedDiscoverConfig, results: ProbeResult[]) => HookResult
-
-  'zod:runtime:generate': (config: ParsedDiscoverConfig, method: HttpMethod, path: string, schemaConfig: ProbeResult['config'], sample: any) => HookResult
-  'zod:runtime:generated': (config: ParsedDiscoverConfig, results: SchemaResult[]) => HookResult
-
-  'zod:generate': (config: ParsedDiscoverConfig, method: HttpMethod, name: string, schema: z.ZodType) => HookResult
-  'zod:generated': (config: ParsedDiscoverConfig, result: { name: string, method: HttpMethod, schema: string }[]) => HookResult
-
-  'json:generate': (config: ParsedDiscoverConfig, method: HttpMethod, name: string, schema: z.ZodType) => HookResult
-  'json:generated': (config: ParsedDiscoverConfig, result: { name: string, method: HttpMethod, schema: string }[]) => HookResult
-
-  'openapi:generate': (config: ParsedDiscoverConfig, components: ZodOpenApiComponentsObject, paths: ZodOpenApiPathsObject) => HookResult
-  'openapi:generated': (config: ParsedDiscoverConfig, result: string) => HookResult
-
-  'typescript:generate': (config: ParsedDiscoverConfig, openapiTSOptions: any) => HookResult
-  'typescript:generated': (config: ParsedDiscoverConfig, result: string) => HookResult
-}

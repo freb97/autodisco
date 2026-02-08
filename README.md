@@ -6,7 +6,11 @@
 [![License][license-src]][license-href]
 
 AutoDisco is a tool for automatic discovery of REST APIs that do not provide an OpenAPI specification themselves.
-It generates an OpenAPI schema by inferring request and response structures from user-defined probes.
+It generates an OpenAPI schema, TypeScript types, JSON schemas, Zod schemas, or Markdown documentation by inferring
+request and response structures from user-defined probes, i.e. test traffic.
+
+You can use it to quickly generate documentation and types for existing APIs
+so your LLM agents can understand how to interact with them.
 
 ## Installation
 
@@ -40,7 +44,7 @@ autodisco/
     └── types.d.ts
 ```
 
-Available `generate` options are: `openapi`, `typescript`, `zod`, and `json`.
+Available `generate` options are: `openapi`, `typescript`, `zod`, `json`, and `markdown`.
 
 The default is `openapi`, if no options are provided. When TypeScript options are enabled, `openapi` will
 be generated as well since they are generated based on the OpenAPI schema.
@@ -99,7 +103,7 @@ Available CLI options are:
 - `--headers`: Headers to include in the request (in JSON format).
 - `--query`: Query parameters to include in the request (in JSON format).
 - `--body`: The request body to include in the request (in JSON format).
-- `--generate`: Options to customize code generation (available values: `openapi`, `typescript`, `json` or `zod`).
+- `--generate`: Options to customize code generation (available values: `openapi`, `typescript`, `json`, `zod`, `markdown`).
 
 ### Programmatic Usage
 
@@ -298,6 +302,7 @@ The `discover` function accepts a configuration object with the following values
   - `typescript`: Whether to generate TypeScript types (`boolean | generateTypescriptOptions`, optional).
   - `zod`: Whether to generate Zod schemas (`boolean`, optional).
   - `json`: Whether to generate JSON schemas (`boolean`, optional).
+  - `markdown`: Whether to generate Markdown documentation (`boolean`, optional).
 - `hooks`: Hooks to customize the discovery process (optional).
 - `logger`: Custom configuration for the logger ([Consola options](https://github.com/unjs/consola), optional).
 
@@ -422,6 +427,51 @@ The `hooks` configuration allows you to customize the discovery process by provi
 | `typescript:generate`   | `config`, `openapiTSOptions`                         | Called before generating TypeScript types             |
 | `typescript:generated`  | `config`, `result`                                   | Called after TypeScript types have been generated     |
 | `discovery:completed`   | `config`, `totalTime`, `totalProbingTime`            | Called when the entire discovery process is completed |
+
+## Development
+
+To run the project locally, you need to have [Bun](https://bun.sh/) installed.
+You can use the provided nix-shell for a consistent development environment.
+
+Install dependencies:
+
+```sh
+bun install
+```
+
+Run tests:
+
+```sh
+bun test
+```
+
+Run linter:
+
+```sh
+bun lint
+```
+
+Run typechecks:
+
+```sh
+bun typecheck
+```
+
+To run the CLI locally, you can use `bun run`:
+
+```sh
+bun run ./src/cli/index.ts https://jsonplaceholder.typicode.com/posts
+# Or
+bun run ./src/cli/index.ts ./path/to/config
+```
+
+## Limitations
+
+AutoDisco is designed to be a powerful tool for discovering and documenting REST APIs, but it has some limitations to be aware of:
+- It relies on the responses from the probes to infer the schema, so if the responses are not representative of the actual API, the generated schema may be inaccurate.
+- It may not be able to infer certain complex data structures or relationships between endpoints, especially if the responses do not provide enough information.
+- It does not currently support authentication or other advanced features that may be required to access certain APIs.
+- It currently only works with JSON based API responses and may not be suitable for APIs that use other formats such as XML or GraphQL.
 
 ## Acknowledgements
 
