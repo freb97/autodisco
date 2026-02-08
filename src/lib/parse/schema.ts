@@ -242,9 +242,7 @@ export async function parseSchemas(probeResults: ProbeResult[], config: ParsedDi
       return undefined
     }
 
-    const schema = inferFromValue(config.body)
-
-    return schema instanceof z.ZodObject ? schema.partial() : schema
+    return inferFromValue(config.body)
   }
 
   const schemas: SchemaResult[] = []

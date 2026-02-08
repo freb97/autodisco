@@ -23,6 +23,11 @@ export interface LiteralNode {
   value: string
 }
 
+export interface OptionalNode {
+  type: 'optional'
+  value: ZodASTNode
+}
+
 export interface ObjectNode {
   type: 'object'
   properties: ObjectProperty[]
@@ -51,6 +56,7 @@ export type ZodASTNode
     | NullNode
     | UnknownNode
     | LiteralNode
+    | OptionalNode
     | ObjectNode
     | ArrayNode
     | UnionNode

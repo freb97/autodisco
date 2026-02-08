@@ -428,6 +428,43 @@ The `hooks` configuration allows you to customize the discovery process by provi
 | `typescript:generated`  | `config`, `result`                                   | Called after TypeScript types have been generated     |
 | `discovery:completed`   | `config`, `totalTime`, `totalProbingTime`            | Called when the entire discovery process is completed |
 
+## Development
+
+To run the project locally, you need to have [Bun](https://bun.sh/) installed.
+You can use the provided nix-shell for a consistent development environment.
+
+Install dependencies:
+
+```sh
+bun install
+```
+
+Run tests:
+
+```sh
+bun test
+```
+
+Run linter:
+
+```sh
+bun lint
+```
+
+Run typechecks:
+
+```sh
+bun typecheck
+```
+
+To run the CLI locally, you can use `bun run`:
+
+```sh
+bun run ./src/cli/index.ts https://jsonplaceholder.typicode.com/posts
+# Or
+bun run ./src/cli/index.ts ./path/to/config
+```
+
 ## Limitations
 
 AutoDisco is designed to be a powerful tool for discovering and documenting REST APIs, but it has some limitations to be aware of:

@@ -1,4 +1,4 @@
-import type { ZodASTNode } from './ast'
+import type { ZodASTNode } from './types'
 
 import { z } from 'zod'
 
@@ -40,6 +40,13 @@ export function buildAST(schema: z.ZodType): ZodASTNode {
       type: 'union',
       discriminator: '',
       options: schema._zod.def.options.map(option => buildAST(option as z.ZodType)),
+    }
+  }
+
+  if (schema instanceof z.ZodOptional) {
+    return {
+      type: 'optional',
+      value: buildAST(schema._zod.def.innerType as z.ZodType),
     }
   }
 

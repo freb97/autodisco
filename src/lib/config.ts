@@ -44,11 +44,13 @@ export const discoverConfigSchema = z.object({
     z.record(z.string(), z.union([probeConfigSchema, z.array(probeConfigSchema)])),
   ),
   generate: z.object({
-    openapi: z.boolean().optional(),
+    openapi: z.object({
+      typescript: z.union([z.boolean(), z.object<import('openapi-typescript').OpenAPITSOptions>()]).optional(),
+    }).or(z.boolean()).optional(),
     json: z.boolean().optional(),
     zod: z.boolean().optional(),
     markdown: z.boolean().optional(),
-    typescript: z.union([z.boolean(), z.object<import('openapi-typescript').OpenAPITSOptions>()]).optional(),
+    typescript: z.boolean().optional(),
   }).optional(),
   clear: z.boolean().optional(),
   minify: z.boolean().optional(),
@@ -88,13 +90,13 @@ export const discoverConfigSchemaWithDefaults = discoverConfigSchema.omit({
   }),
   generate: discoverConfigSchema.shape.generate.transform((generate) => {
     return {
-      openapi: generate?.openapi ?? false,
+      openapi: typeof generate?.openapi === 'object' && typeof generate?.openapi?.typescript === 'object'
+        ? { typescript: generate.openapi.typescript as import('openapi-typescript').OpenAPITSOptions }
+        : generate?.openapi ?? false,
       json: generate?.json ?? false,
       zod: generate?.zod ?? false,
       markdown: generate?.markdown ?? false,
-      typescript: typeof generate?.typescript === 'object'
-        ? generate.typescript as import('openapi-typescript').OpenAPITSOptions
-        : generate?.typescript ?? false,
+      typescript: generate?.typescript ?? false,
     }
   }),
   clear: discoverConfigSchema.shape.clear.default(true),

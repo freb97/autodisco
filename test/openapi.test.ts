@@ -189,4 +189,29 @@ describe('openapi schema generation', () => {
   afterAll(() => {
     stderrSpy.mockRestore()
   })
+
+  it('should generate openapi typescript types', async () => {
+    const { baseUrl, outputDir } = getTestBaseConfig()
+
+    await discover({
+      baseUrl,
+      outputDir,
+      probes: {
+        get: {
+          '/users': {},
+        },
+      },
+      generate: {
+        openapi: {
+          typescript: true,
+        },
+      },
+    })
+
+    const typesFileStat = await stat(`${outputDir}/openapi/types.d.ts`)
+    expect(typesFileStat.isFile()).toBe(true)
+
+    const typesFileContent = await readFile(`${outputDir}/openapi/types.d.ts`, 'utf-8')
+    expect(typesFileContent).toBeDefined()
+  })
 })

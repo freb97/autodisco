@@ -21,15 +21,16 @@ export async function generateJsonSchema(schemaResults: SchemaResult[], config: 
 
   const components = schemaResults.map(result => ({
     name: resolveTypeName(joinURL(config.baseUrl ?? '', result.path)),
+    path: result.path,
     method: result.method,
-    schema: result.schema,
+    output: result.schema,
   }))
 
-  const schemas = await Promise.all(components.map(async ({ schema, ...rest }) => {
-    await config.hooks.callHook('json:generate', config, rest.method, rest.name, schema)
+  const schemas = await Promise.all(components.map(async ({ output, ...rest }) => {
+    await config.hooks.callHook('json:generate', config, rest.method, rest.name, output)
 
     return {
-      schema: JSON.stringify(schema.toJSONSchema(), undefined, config.minify ? 0 : 2),
+      output: JSON.stringify(output.toJSONSchema(), undefined, config.minify ? 0 : 2),
       ...rest,
     }
   }))
@@ -37,8 +38,8 @@ export async function generateJsonSchema(schemaResults: SchemaResult[], config: 
   await Promise.all(schemas.map(async ({ method }) =>
     mkdir(joinURL(config.outputDir, 'json', method), { recursive: true })))
 
-  await Promise.all(schemas.map(async ({ name, method, schema }) =>
-    writeFile(joinURL(config.outputDir, 'json', method, `${name}.json`), schema)))
+  await Promise.all(schemas.map(async ({ name, method, output }) =>
+    writeFile(joinURL(config.outputDir, 'json', method, `${name}.json`), output)))
 
   await config.hooks.callHook('json:generated', config, schemas)
 
