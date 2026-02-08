@@ -9,8 +9,8 @@ import { joinURL } from 'ufo'
  * @param openApiResult OpenAPI schema result as JSON string
  * @param config Parsed discovery configuration
  */
-export async function generateTypeScriptTypes(openApiResult: string, config: ParsedDiscoverConfig) {
-  if (!config.generate?.typescript) {
+export async function generateTypeScriptTypes(openApiResult: string | undefined, config: ParsedDiscoverConfig) {
+  if (!config.generate?.typescript || !openApiResult) {
     return
   }
 

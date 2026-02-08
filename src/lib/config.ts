@@ -87,7 +87,7 @@ export const discoverConfigSchemaWithDefaults = discoverConfigSchema.omit({
   }),
   generate: discoverConfigSchema.shape.generate.transform((generate) => {
     return {
-      openapi: generate?.openapi ?? true,
+      openapi: generate?.openapi ?? false,
       json: generate?.json ?? false,
       zod: generate?.zod ?? false,
       typescript: typeof generate?.typescript === 'object'

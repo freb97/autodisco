@@ -12,6 +12,8 @@ interface DiscoverArgs {
   configPath?: string
   path?: string
   method?: string
+  query?: string
+  params?: string
   body?: string
   headers?: string
   generate?: 'typescript' | 'json' | 'zod'
@@ -67,6 +69,7 @@ export async function runFromArgs(args: Omit<DiscoverArgs, 'configPath'>) {
       [args.method?.toLowerCase() || 'get']: {
         '/': {
           body: args.body ? JSON.parse(args.body) : undefined,
+          query: args.query ? JSON.parse(args.query) : undefined,
           headers: args.headers ? JSON.parse(args.headers) : undefined,
         },
       },

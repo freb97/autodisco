@@ -1,5 +1,7 @@
-# 1.0.1
-- Added additional cli arguments for sending a single probe without config file
+# 1.1.0
+- Added additional CLI arguments for sending a single probe without config file
+- Refactored zod schema parsing and generation
+- Updated dependencies
 
 # 1.0.0
 - Added JSON Schema generation support

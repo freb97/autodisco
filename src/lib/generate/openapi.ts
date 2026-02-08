@@ -140,6 +140,12 @@ function getPaths(schemaResults: SchemaResult[], config: ParsedDiscoverConfig) {
  * @return Generated OpenAPI schema as JSON string
  */
 export async function generateOpenApiSchema(schemaResults: SchemaResult[], config: ParsedDiscoverConfig) {
+  const noGenerateOptions = Object.values(config.generate).every(v => v === false)
+
+  if (!noGenerateOptions && !config.generate.openapi && !config.generate.typescript) {
+    return
+  }
+
   const components = getComponents(schemaResults, config)
   const paths = getPaths(schemaResults, config)
 
