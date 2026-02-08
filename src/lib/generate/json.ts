@@ -1,4 +1,5 @@
-import type { ParsedDiscoverConfig, SchemaResult } from '../config'
+import type { SchemaResult } from '../../types'
+import type { ParsedDiscoverConfig } from '../config'
 
 import { mkdir, writeFile } from 'node:fs/promises'
 import { joinURL } from 'ufo'
@@ -11,7 +12,7 @@ import { resolveTypeName } from '../../helpers/path'
  * @param schemaResults Array of schema results
  * @param config Parsed discovery configuration
  *
- * @return Generated JSON schema as string
+ * @return Generated JSON schemas
  */
 export async function generateJsonSchema(schemaResults: SchemaResult[], config: ParsedDiscoverConfig) {
   if (!config.generate?.json) {
@@ -40,4 +41,6 @@ export async function generateJsonSchema(schemaResults: SchemaResult[], config: 
     writeFile(joinURL(config.outputDir, 'json', method, `${name}.json`), schema)))
 
   await config.hooks.callHook('json:generated', config, schemas)
+
+  return schemas
 }

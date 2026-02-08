@@ -1,4 +1,5 @@
-import type { ParsedDiscoverConfig, SchemaResult } from '../config'
+import type { SchemaResult } from '../../types'
+import type { ParsedDiscoverConfig } from '../config'
 
 import { mkdir, writeFile } from 'node:fs/promises'
 import { joinURL } from 'ufo'
@@ -44,4 +45,6 @@ export async function generateZodSchemas(schemaResults: SchemaResult[], config: 
     writeFile(joinURL(config.outputDir, 'zod', method, `${name}.ts`), generateFile(name, schema))))
 
   await config.hooks.callHook('zod:generated', config, schemas)
+
+  return schemas
 }

@@ -29,7 +29,9 @@ export async function generateTypeScriptTypes(openApiResult: string | undefined,
     await config.hooks.callHook('typescript:generated', config, result)
 
     await mkdir(joinURL(config.outputDir, 'typescript'), { recursive: true })
-      .then(() => writeFile(joinURL(config.outputDir, 'typescript', 'types.d.ts'), result))
+      .then(() => writeFile(joinURL(config.outputDir, 'typescript', 'openapi.d.ts'), result))
+
+    return result
   }).catch((error) => {
     throw new Error('openapi-typescript is required to generate TypeScript types.\nYou can install it with: npm install openapi-typescript', { cause: error })
   })

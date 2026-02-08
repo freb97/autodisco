@@ -1,6 +1,7 @@
 import type { ZodOpenApiComponentsObject, ZodOpenApiPathsObject } from 'zod-openapi'
 
-import type { ParsedDiscoverConfig, SchemaResult } from '../config'
+import type { SchemaResult } from '../../types'
+import type { ParsedDiscoverConfig } from '../config'
 
 import { mkdir, writeFile } from 'node:fs/promises'
 import { joinURL } from 'ufo'
@@ -172,12 +173,12 @@ export async function generateOpenApiSchema(schemaResults: SchemaResult[], confi
     paths,
   })
 
-  const jsonDocument = JSON.stringify(document, undefined, config.minify ? 0 : 2)
+  const openApiDocument = JSON.stringify(document, undefined, config.minify ? 0 : 2)
 
   await mkdir(joinURL(config.outputDir, 'openapi'), { recursive: true })
-    .then(() => writeFile(joinURL(config.outputDir, 'openapi', 'schema.json'), jsonDocument))
+    .then(() => writeFile(joinURL(config.outputDir, 'openapi', 'schema.json'), openApiDocument))
 
-  await config.hooks.callHook('openapi:generated', config, jsonDocument)
+  await config.hooks.callHook('openapi:generated', config, openApiDocument)
 
-  return jsonDocument
+  return openApiDocument
 }
