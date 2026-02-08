@@ -102,12 +102,12 @@ describe('openapi schema generation', () => {
     expect(schemaJson).toHaveProperty('paths./suggest.get')
 
     expect(schemaJson).toHaveProperty('components.schemas.GetSuggest.type', 'array')
-    expect(schemaJson).toHaveProperty('components.schemas.GetSuggest.items.anyOf')
-    expect(schemaJson.components.schemas.GetSuggest.items.anyOf).toHaveLength(3)
+    expect(schemaJson).toHaveProperty('components.schemas.GetSuggest.items.oneOf')
+    expect(schemaJson.components.schemas.GetSuggest.items.oneOf).toHaveLength(3)
 
-    expect(schemaJson.components.schemas.GetSuggest.items.anyOf[0]).toHaveProperty('properties.type.const', 'product')
-    expect(schemaJson.components.schemas.GetSuggest.items.anyOf[1]).toHaveProperty('properties.type.const', 'category')
-    expect(schemaJson.components.schemas.GetSuggest.items.anyOf[2]).toHaveProperty('properties.type.const', 'searchTerm')
+    expect(schemaJson.components.schemas.GetSuggest.items.oneOf[0]).toHaveProperty('properties.type.const', 'product')
+    expect(schemaJson.components.schemas.GetSuggest.items.oneOf[1]).toHaveProperty('properties.type.const', 'category')
+    expect(schemaJson.components.schemas.GetSuggest.items.oneOf[2]).toHaveProperty('properties.type.const', 'searchTerm')
   })
 
   it('should handle empty probe config', async () => {

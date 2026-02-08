@@ -4,7 +4,8 @@ import { mkdir, writeFile } from 'node:fs/promises'
 import { joinURL } from 'ufo'
 
 import { resolveTypeName } from '../../helpers/path'
-import { zodToString } from '../../helpers/zod'
+import { buildAST } from './zod/builder'
+import { writeAST } from './zod/writer'
 
 function generateFile(name: string, schema: string) {
   return `import { z } from 'zod';\n\nexport const ${name} = ${schema};`
@@ -31,7 +32,7 @@ export async function generateZodSchemas(schemaResults: SchemaResult[], config: 
     await config.hooks.callHook('zod:generate', config, rest.method, rest.name, schema)
 
     return {
-      schema: zodToString(schema),
+      schema: writeAST(buildAST(schema)),
       ...rest,
     }
   }))

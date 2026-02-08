@@ -184,7 +184,12 @@ export function inferArray(value: any[]): z.ZodArray {
     }, {} as Record<string, any[]>)
 
     if (Object.keys(groupedByDiscriminator).length === uniqueSchemas.size) {
-      return z.array(z.union(Array.from(inferUniqueArray(value, discriminator).values()) as [z.ZodType, z.ZodType, ...z.ZodType[]]))
+      const discriminatedSchemas = Array.from(inferUniqueArray(value, discriminator).values())
+        .filter((schema): schema is z.ZodObject<any> => schema instanceof z.ZodObject)
+
+      if (discriminatedSchemas.length > 0) {
+        return z.array(z.discriminatedUnion(discriminator, discriminatedSchemas as [z.ZodObject<any>, ...z.ZodObject<any>[]]))
+      }
     }
   }
 
