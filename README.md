@@ -34,20 +34,18 @@ To also generate TypeScript types, Zod schemas or JSON schemas, you can use the 
 npx autodisco https://jsonplaceholder.typicode.com/posts --generate typescript
 ```
 
-This will create TypeScript types in the `autodisco/typescript` directory in addition to the OpenAPI schema:
+This will create TypeScript types in the `autodisco/typescript` directory:
 
 ```
 autodisco/
-├── openapi/
-│   └── schema.json
 └── typescript/
-    └── types.d.ts
+    └── get/
+        └── Posts.ts
 ```
 
-Available `generate` options are: `openapi`, `typescript`, `zod`, `json`, and `markdown`.
+Available `generate` options are: `openapi`, `openapi-typescript`, `typescript`, `zod`, `json`, and `markdown`.
 
-The default is `openapi`, if no options are provided. When TypeScript options are enabled, `openapi` will
-be generated as well since they are generated based on the OpenAPI schema.
+The default is `openapi`, if no options are provided.
 
 ### Multiple Endpoints
 
