@@ -2,7 +2,7 @@ import type { ZodOpenApiComponentsObject, ZodOpenApiPathsObject } from 'zod-open
 
 import type { ParsedDiscoverConfig, SchemaResult } from '../config'
 
-import { writeFile } from 'node:fs/promises'
+import { mkdir, writeFile } from 'node:fs/promises'
 import { joinURL } from 'ufo'
 import { z } from 'zod'
 import { createDocument } from 'zod-openapi'
@@ -168,7 +168,8 @@ export async function generateOpenApiSchema(schemaResults: SchemaResult[], confi
 
   const jsonDocument = JSON.stringify(document, undefined, config.minify ? 0 : 2)
 
-  await writeFile(joinURL(config.outputDir, 'openapi/schema.json'), jsonDocument)
+  await mkdir(joinURL(config.outputDir, 'openapi'), { recursive: true })
+    .then(() => writeFile(joinURL(config.outputDir, 'openapi', 'schema.json'), jsonDocument))
 
   await config.hooks.callHook('openapi:generated', config, jsonDocument)
 

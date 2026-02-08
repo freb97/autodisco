@@ -1,7 +1,6 @@
 import type { ParsedDiscoverConfig } from './config'
 
 import { mkdir, rm, stat } from 'node:fs/promises'
-import { joinURL } from 'ufo'
 
 /**
  * Prepare the output directory based on the configuration
@@ -16,10 +15,4 @@ export async function prepare(config: ParsedDiscoverConfig) {
   }
 
   await mkdir(config.outputDir, { recursive: true })
-
-  await mkdir(joinURL(config.outputDir, 'openapi'), { recursive: true })
-
-  if (config.generate?.zod) {
-    await mkdir(joinURL(config.outputDir, 'zod'), { recursive: true })
-  }
 }

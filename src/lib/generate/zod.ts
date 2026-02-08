@@ -37,9 +37,11 @@ export async function generateZodSchemas(schemaResults: SchemaResult[], config: 
     }
   }))
 
+  await Promise.all(schemas.map(async ({ method }) =>
+    mkdir(joinURL(config.outputDir, 'zod', method), { recursive: true })))
+
   await Promise.all(schemas.map(async ({ name, method, schema }) =>
-    mkdir(joinURL(config.outputDir, 'zod', method), { recursive: true }).then(() =>
-      writeFile(joinURL(config.outputDir, 'zod', method, `${name}.ts`), generateFile(name, schema)))))
+    writeFile(joinURL(config.outputDir, 'zod', method, `${name}.ts`), generateFile(name, schema))))
 
   await config.hooks.callHook('zod:generated', config, schemas)
 }

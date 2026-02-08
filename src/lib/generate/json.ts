@@ -33,9 +33,11 @@ export async function generateJsonSchema(schemaResults: SchemaResult[], config: 
     }
   }))
 
+  await Promise.all(schemas.map(async ({ method }) =>
+    mkdir(joinURL(config.outputDir, 'json', method), { recursive: true })))
+
   await Promise.all(schemas.map(async ({ name, method, schema }) =>
-    mkdir(joinURL(config.outputDir, 'json', method), { recursive: true }).then(() =>
-      writeFile(joinURL(config.outputDir, 'json', method, `${name}.json`), schema))))
+    writeFile(joinURL(config.outputDir, 'json', method, `${name}.json`), schema)))
 
   await config.hooks.callHook('json:generated', config, schemas)
 }
