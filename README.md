@@ -28,6 +28,9 @@ npx autodisco https://jsonplaceholder.typicode.com/posts
 
 This will create an OpenAPI schema in `autodisco/openapi/schema.json` based on the response from the provided endpoint.
 
+By default, the CLI will send a GET request to the provided endpoint, but you can customize the HTTP method, request body,
+headers and query parameters using the available CLI options.
+
 To also generate TypeScript types, Zod schemas or JSON schemas, you can use the `--generate` flag:
 
 ```sh
@@ -38,14 +41,15 @@ This will create TypeScript types in the `autodisco/typescript` directory:
 
 ```
 autodisco/
-└── typescript/
-    └── get/
-        └── Posts.ts
+├── typescript/
+│   └── get/
+│       └── Posts.ts
+└── API.md
 ```
 
 Available `generate` options are: `openapi`, `openapi-typescript`, `typescript`, `zod`, `json`, and `markdown`.
 
-The default is `openapi`, if no options are provided.
+The default is `openapi`, if no options are provided. Markdown is always provided.
 
 ### Multiple Endpoints
 
@@ -81,6 +85,7 @@ npx autodisco
 ```
 
 This will create an OpenAPI schema in `autodisco/openapi/schema.json` for the specified endpoints.
+Markdown is always provided, except when explicitly set to false in the `generate` configuration.
 
 ### CLI Usage
 
@@ -159,11 +164,11 @@ await discover({
 })
 ```
 
-This will create an OpenAPI schema in `autodisco/openapi/schema.json`.
+This will create an OpenAPI schema for all configured endpoints in `autodisco/openapi/schema.json`.
 
 ### Generating TypeScript Types
 
-If you also want to generate TypeScript types for the probed endpoints, you can enable the `typescript` option in the `generate` configuration:
+If you want to generate TypeScript types from your endpoints you can enable the `typescript` option in the `generate` configuration:
 
 ```ts
 import discover from 'autodisco'
@@ -172,7 +177,19 @@ await discover({
   baseUrl: 'https://jsonplaceholder.typicode.com',
 
   probes: {
-    get: { '/todos': {} },
+    get: {
+      '/todos': {},
+    },
+
+    post: {
+      '/users': {
+        body: {
+          name: 'John Doe',
+          username: 'johndoe',
+          email: 'johndoe@example.com',
+        },
+      },
+    },
   },
 
   generate: {
@@ -181,19 +198,17 @@ await discover({
 })
 ```
 
-This will create TypeScript types in the `autodisco/typescript` directory in addition to the OpenAPI schema:
+This will create TypeScript types in the `autodisco/typescript` directory.
 
 ```
 autodisco/
-├── openapi/
-│   └── schema.json
-└── typescript/
-    └── types.d.ts
+├── typescript/
+│   ├── get/
+│   │   └── Todos.ts
+│   └── post/
+│       └── Users.ts
+└── API.md
 ```
-
-> [!NOTE]
-> Make sure to install `openapi-typescript` if you want to use TypeScript type generation:
-> `npm install openapi-typescript`
 
 ### Generating Zod Schemas
 
@@ -227,17 +242,16 @@ await discover({
 })
 ```
 
-This will create Zod schemas in the `autodisco/zod` directory in addition to the OpenAPI schema:
+This will create Zod schemas in the `autodisco/zod` directory.
 
 ```
 autodisco/
-├── openapi/
-│   └── schema.json
-└── zod/
-    ├── get/
-    │   └── Todos.ts
-    └── post/
-        └── Users.ts
+├── zod/
+│   ├── get/
+│   │   └── Todos.ts
+│   └── post/
+│       └── Users.ts
+└── API.md
 ```
 
 ### Generating JSON Schemas
@@ -272,18 +286,53 @@ await discover({
 })
 ```
 
-This will create JSON schemas in the `autodisco/json` directory in addition to the OpenAPI schema:
+This will create JSON schemas in the `autodisco/json` directory.
+
+```
+autodisco/
+├── json/
+│   ├── get/
+│   │   └── Todos.json
+│   └── post/
+│       └── Users.json
+└── API.md
+```
+
+### Generating OpenAPI TypeScript Types
+
+If you also want to generate TypeScript types for the probed endpoints using `openapi-typescript`, you can enable the `typescript` option in the `generate` configuration:
+
+```ts
+import discover from 'autodisco'
+
+await discover({
+  baseUrl: 'https://jsonplaceholder.typicode.com',
+
+  probes: {
+    get: { '/todos': {} },
+  },
+
+  generate: {
+    openapi: {
+      typescript: true,
+    },
+  },
+})
+```
+
+This will create TypeScript types in the `autodisco/openapi` directory in addition to the OpenAPI schema:
 
 ```
 autodisco/
 ├── openapi/
-│   └── schema.json
-└── json/
-    ├── get/
-    │   └── Todos.json
-    └── post/
-        └── Users.json
+│   ├── schema.json
+│   └── types.d.ts
+└── API.md
 ```
+
+> [!NOTE]
+> Make sure to install `openapi-typescript` if you want to use TypeScript type generation:
+> `npm install openapi-typescript`
 
 ## Configuration
 
@@ -296,11 +345,11 @@ The `discover` function accepts a configuration object with the following values
 - `minify`: Whether to minify the generated OpenAPI schema (`boolean`, default: `false`).
 - `clear`: Whether to clear the output directory before generating files (`boolean`, default: `true`).
 - `generate`: Options to customize code generation (optional)
-  - `openapi`: Whether to generate the OpenAPI schema (`boolean`, default `true`).
+  - `markdown`: Whether to generate Markdown documentation (`boolean`, default: `true`).
+  - `openapi`: Whether to generate the OpenAPI schema (`boolean`, default: `true`).
   - `typescript`: Whether to generate TypeScript types (`boolean | generateTypescriptOptions`, optional).
   - `zod`: Whether to generate Zod schemas (`boolean`, optional).
   - `json`: Whether to generate JSON schemas (`boolean`, optional).
-  - `markdown`: Whether to generate Markdown documentation (`boolean`, optional).
 - `hooks`: Hooks to customize the discovery process (optional).
 - `logger`: Custom configuration for the logger ([Consola options](https://github.com/unjs/consola), optional).
 
@@ -322,13 +371,17 @@ If enabled, TypeScript types and Zod schemas are also generated based on the inf
 
 When all probes are completed, their responses will be converted to Zod schemas at runtime to
 ensure an accurate representation of the data structures and to circumvent any serialization issues.
+
 After that, the OpenAPI schema will be generated using the inferred runtime schemas with [zod-openapi](https://github.com/samchungy/zod-openapi)
 in the `${outputDir}/openapi` directory.
 
-If Zod schema generation is enabled, Zod schemas will be generated as files in the `${outputDir}/zod` directory.
-
-If TypeScript type generation is enabled, the OpenAPI schema will be converted to TypeScript types
+If OpenAPI TypeScript type generation is enabled, the OpenAPI schema will be converted to TypeScript types
 using [openapi-typescript](https://github.com/openapi-ts/openapi-typescript) in the `${outputDir}/typescript` directory.
+
+If Zod schema generation is enabled, Zod schemas will be generated as files in the `${outputDir}/zod` directory.
+The same applies to JSON schema generation and TypeScript types in their respective `${outputDir}/json` and `${outputDir}/typescript` directories.
+
+A Markdown based API documentation will be generated in the `${outputDir}/API.md` file, summarizing the discovered endpoints and their inferred schemas.
 
 ### Schema Inference
 
@@ -408,23 +461,27 @@ type Response = ({
 
 The `hooks` configuration allows you to customize the discovery process by providing functions that are called at specific points during execution.
 
-| Hook Name               | Props                                                | Description                                           |
-|-------------------------|------------------------------------------------------|-------------------------------------------------------|
-| `discovery:start`       | `config`                                             | Called when the discovery process begins              |
-| `probe:request`         | `method`, `path`, `probeConfig`                      | Called before each API probe request is made          |
-| `probe:response`        | `method`, `path`, `probeConfig`, `response`          | Called after each API probe response is received      |
-| `probes:completed`      | `config`, `results`                                  | Called when all API probing is complete               |
-| `zod:runtime:generate`  | `config`, `method`, `path`, `schemaConfig`, `sample` | Called before generating runtime Zod schemas          |
-| `zod:runtime:generated` | `config`, `results`                                  | Called after runtime Zod schemas have been generated  |
-| `zod:generate`          | `config`, `method`, `name`, `schema`                 | Called before generating Zod schema files             |
-| `zod:generated`         | `config`, `result`                                   | Called after Zod schema files have been generated     |
-| `json:generate`         | `config`, `method`, `name`, `schema`                 | Called before generating JSON schema files            |
-| `json:generated`        | `config`, `result`                                   | Called after JSON schema files have been generated    |
-| `openapi:generate`      | `config`, `components`, `paths`                      | Called before generating the OpenAPI schema           |
-| `openapi:generated`     | `config`, `result`                                   | Called after the OpenAPI schema has been generated    |
-| `typescript:generate`   | `config`, `openapiTSOptions`                         | Called before generating TypeScript types             |
-| `typescript:generated`  | `config`, `result`                                   | Called after TypeScript types have been generated     |
-| `discovery:completed`   | `config`, `totalTime`, `totalProbingTime`            | Called when the entire discovery process is completed |
+| Hook Name                      | Props                                                | Description                                               |
+|--------------------------------|------------------------------------------------------|-----------------------------------------------------------|
+| `discovery:start`              | `config`                                             | Called when the discovery process begins                  |
+| `discovery:completed`          | `config`, `totalTime`, `totalProbingTime`            | Called when the entire discovery process is completed     |
+| `probe:request`                | `method`, `path`, `probeConfig`                      | Called before each API probe request is made              |
+| `probe:response`               | `method`, `path`, `probeConfig`, `response`          | Called after each API probe response is received          |
+| `probes:completed`             | `config`, `results`                                  | Called when all API probing is complete                   |
+| `zod:runtime:generate`         | `config`, `method`, `path`, `schemaConfig`, `sample` | Called before generating runtime Zod schemas              |
+| `zod:runtime:generated`        | `config`, `results`                                  | Called after runtime Zod schemas have been generated      |
+| `zod:generate`                 | `config`, `method`, `name`, `schema`                 | Called before generating Zod schema files                 |
+| `zod:generated`                | `config`, `result`                                   | Called after Zod schema files have been generated         |
+| `json:generate`                | `config`, `method`, `name`, `schema`                 | Called before generating JSON schema files                |
+| `json:generated`               | `config`, `result`                                   | Called after JSON schema files have been generated        |
+| `typescript:generate`          | `config`, `method`, `name`, `schema`                 | Called before generating TypeScript type files            |
+| `typescript:generated`         | `config`, `result`                                   | Called after TypeScript type files have been generated    |
+| `markdown:generate`            | `config`, `nodes`, `separator`                       | Called before generating Markdown documentation           |
+| `markdown:generated`           | `config`, `result`                                   | Called after Markdown documentation has been generated    |
+| `openapi:generate`             | `config`, `components`, `paths`                      | Called before generating the OpenAPI schema               |
+| `openapi:generated`            | `config`, `result`                                   | Called after the OpenAPI schema has been generated        |
+| `openapi:typescript:generate`  | `config`, `openapiTSOptions`                         | Called before generating OpenAPI TypeScript types         |
+| `openapi:typescript:generated` | `config`, `result`                                   | Called after OpenAPI TypeScript types have been generated |
 
 ## Development
 

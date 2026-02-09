@@ -49,7 +49,9 @@ function mapOutputs(items: OutputResult[], callback: (method: string, output: Ou
   }, {} as Record<string, OutputResult[]>)).map(([method, results]) => callback(method, results))
 }
 
-function generateMarkdown(nodes: (string | string[])[], separator: string = '\n\n') {
+async function generateMarkdown(config: ParsedDiscoverConfig, nodes: (string | string[])[], separator: string = '\n\n') {
+  await config.hooks.callHook('markdown:generate', config, nodes, separator)
+
   return nodes.flat().join(separator).concat('\n')
 }
 
@@ -194,7 +196,10 @@ function generateFilesSection(
       header('OpenAPI', 3),
       list([
         `[OpenAPI Schema](./openapi/schema.json)`,
-        `[OpenAPI TypeScript Types](./openapi/types.d.ts)`,
+        ...(typeof config.generate.openapi === 'object' && config.generate.openapi.typescript
+          ? [`[OpenAPI TypeScript Types](./openapi/types.d.ts)`]
+          : []
+        ),
       ]),
     ])
   }
@@ -252,7 +257,7 @@ export async function generateMarkdownSchema(
   json: OutputResult[] | undefined,
   config: ParsedDiscoverConfig,
 ) {
-  if (!config.generate?.markdown) {
+  if (config.generate?.markdown === false) {
     return
   }
 
@@ -265,7 +270,7 @@ export async function generateMarkdownSchema(
     }))
   }
 
-  const markdownDocument = generateMarkdown([
+  const markdownDocument = await generateMarkdown(config, [
     generateEntrySection(config, schemaResults),
     generateConfigurationSection(config),
     generateEndpointsSection(schemaResults, typescript, zod, json),

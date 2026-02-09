@@ -92,11 +92,11 @@ export const discoverConfigSchemaWithDefaults = discoverConfigSchema.omit({
     return {
       openapi: typeof generate?.openapi === 'object' && typeof generate?.openapi?.typescript === 'object'
         ? { typescript: generate.openapi.typescript as import('openapi-typescript').OpenAPITSOptions }
-        : generate?.openapi ?? false,
-      json: generate?.json ?? false,
-      zod: generate?.zod ?? false,
-      markdown: generate?.markdown ?? false,
-      typescript: generate?.typescript ?? false,
+        : generate?.openapi,
+      json: generate?.json,
+      zod: generate?.zod,
+      markdown: generate?.markdown,
+      typescript: generate?.typescript,
     }
   }),
   clear: discoverConfigSchema.shape.clear.default(true),

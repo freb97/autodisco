@@ -46,7 +46,7 @@ export interface DiscoverHooks {
   'typescript:generate': (config: ParsedDiscoverConfig, method: HttpMethod, name: string, schema: z.ZodType) => HookResult
   'typescript:generated': (config: ParsedDiscoverConfig, result: OutputResult[]) => HookResult
 
-  'markdown:generate': (config: ParsedDiscoverConfig, method: HttpMethod, name: string, schema: z.ZodType) => HookResult
+  'markdown:generate': (config: ParsedDiscoverConfig, nodes: (string | string[])[], separator: string) => HookResult
   'markdown:generated': (config: ParsedDiscoverConfig, result: string) => HookResult
 
   'openapi:generate': (config: ParsedDiscoverConfig, components: ZodOpenApiComponentsObject, paths: ZodOpenApiPathsObject) => HookResult
