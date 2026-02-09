@@ -14,12 +14,6 @@ so your LLM agents can understand how to interact with them.
 
 [Example API.md](./examples/jsonplaceholder/autodisco/API.md)
 
-## Installation
-
-```sh
-npm install autodisco
-```
-
 ## Usage
 
 You can use AutoDisco directly via the command line interface (CLI).
@@ -112,7 +106,14 @@ Available CLI options are:
 
 ### Programmatic Usage
 
-You can also use AutoDisco programmatically in your code:
+You can also use AutoDisco programmatically in your code.
+First, install the package:
+
+```sh
+npm install autodisco
+```
+
+Then, import the `discover` function and call it with your configuration:
 
 ```ts
 import discover from 'autodisco'
