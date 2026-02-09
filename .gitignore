@@ -9,7 +9,7 @@ dist
 
 # Generated files
 .autodisco
-autodisco/
-autodisco.config.*
+/autodisco/
+/autodisco.config.*
 test/.outputs/
 test.js

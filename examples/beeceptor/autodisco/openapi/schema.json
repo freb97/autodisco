@@ -1,0 +1,293 @@
+{
+  "openapi": "3.1.1",
+  "info": {
+    "version": "1.0.0",
+    "title": "AutoDisco",
+    "description": "Automatically generated API schema from discovered endpoints"
+  },
+  "servers": [
+    {
+      "url": "https://json-placeholder.mock.beeceptor.com",
+      "description": "API Server"
+    }
+  ],
+  "paths": {
+    "/roles": {
+      "get": {
+        "parameters": [
+          {
+            "in": "headers",
+            "name": "X-Custom-Header",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/GetRolesResponse"
+          }
+        }
+      }
+    },
+    "/posts": {
+      "get": {
+        "parameters": [
+          {
+            "in": "headers",
+            "name": "X-Custom-Header",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/GetPostsResponse"
+          }
+        }
+      }
+    },
+    "/posts/{id}": {
+      "get": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "number"
+            },
+            "required": true
+          },
+          {
+            "in": "headers",
+            "name": "X-Custom-Header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "headers",
+            "name": "X-Test",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/GetPostsResponse"
+          }
+        }
+      }
+    },
+    "/comments": {
+      "get": {
+        "parameters": [
+          {
+            "in": "query",
+            "name": "postId",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "in": "headers",
+            "name": "X-Custom-Header",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/GetCommentsResponse"
+          }
+        }
+      }
+    },
+    "/login": {
+      "post": {
+        "parameters": [
+          {
+            "in": "headers",
+            "name": "X-Custom-Header",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PostLoginRequestBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/PostLoginResponse"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "GetRoles": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "number"
+            },
+            "name": {
+              "type": "string"
+            },
+            "description": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "id",
+            "name",
+            "description"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "GetPosts": {
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "number"
+          },
+          "id": {
+            "type": "number"
+          },
+          "title": {
+            "type": "string"
+          },
+          "body": {
+            "type": "string"
+          },
+          "link": {
+            "type": "string"
+          },
+          "comment_count": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "userId",
+          "id",
+          "title",
+          "body",
+          "link",
+          "comment_count"
+        ],
+        "additionalProperties": false
+      },
+      "GetComments": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string"
+          },
+          "paths": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "status",
+          "paths"
+        ],
+        "additionalProperties": false
+      },
+      "PostLogin": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string"
+          },
+          "token": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "success",
+          "message",
+          "token"
+        ],
+        "additionalProperties": false
+      },
+      "PostLoginRequestBody": {
+        "type": "object",
+        "properties": {
+          "username": {
+            "type": "string"
+          },
+          "password": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "username",
+          "password"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "responses": {
+      "GetRolesResponse": {
+        "description": "200 OK",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/GetRoles"
+            }
+          }
+        }
+      },
+      "GetPostsResponse": {
+        "description": "200 OK",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/GetPosts"
+            }
+          }
+        }
+      },
+      "GetCommentsResponse": {
+        "description": "200 OK",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/GetComments"
+            }
+          }
+        }
+      },
+      "PostLoginResponse": {
+        "description": "200 OK",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/PostLogin"
+            }
+          }
+        }
+      }
+    }
+  }
+}

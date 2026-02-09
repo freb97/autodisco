@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "array",
+  "items": {
+    "type": "object",
+    "properties": {
+      "userId": {
+        "type": "number"
+      },
+      "id": {
+        "type": "number"
+      },
+      "title": {
+        "type": "string"
+      },
+      "completed": {
+        "type": "boolean"
+      }
+    },
+    "required": [
+      "userId",
+      "id",
+      "title",
+      "completed"
+    ],
+    "additionalProperties": false
+  }
+}
