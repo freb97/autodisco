@@ -12,6 +12,8 @@ request and response structures from user-defined probes, i.e. test traffic.
 You can use it to quickly generate documentation and types for existing APIs
 so your LLM agents can understand how to interact with them.
 
+[Example API.md](./examples/jsonplaceholder/autodisco/API.md)
+
 ## Installation
 
 ```sh
