@@ -1,3 +1,7 @@
+# 2.0.1
+- Added markdown to default generate options
+- Updated documentation
+
 # 2.0.0
 - Added generate option "markdown"
 - Added typescript type generation
