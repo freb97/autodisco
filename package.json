@@ -59,7 +59,7 @@
     "@vitest/coverage-v8": "^4.0.18",
     "eslint": "^9.39.2",
     "obuild": "^0.4.27",
-    "typescript": "^5.9.3",
+    "typescript": "^6.0.3",
     "vitest": "^4.0.18"
   }
 }
