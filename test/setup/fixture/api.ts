@@ -39,7 +39,7 @@ export default function createTestAPI(port = 3456) {
     }
 
     // GET /users/{id} - Single user
-    if (method === 'GET' && url.match(/^\/users\/\d+$/)) {
+    if (method === 'GET' && /^\/users\/\d+$/.test(url)) {
       res.writeHead(200)
       res.end(JSON.stringify({
         id: 1,

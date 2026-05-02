@@ -41,25 +41,25 @@
     "typecheck": "tsc --noEmit"
   },
   "peerDependencies": {
-    "openapi-typescript": "^7.10.1"
+    "openapi-typescript": "^7.13.0"
   },
   "dependencies": {
-    "c12": "^3.3.3",
-    "citty": "^0.2.0",
+    "c12": "^3.3.4",
+    "citty": "^0.2.2",
     "consola": "^3.4.2",
-    "defu": "^6.1.4",
-    "hookable": "^6.0.1",
-    "ufo": "^1.6.3",
-    "zod": "^4.3.6",
+    "defu": "^6.1.7",
+    "hookable": "^6.1.1",
+    "ufo": "^1.6.4",
+    "zod": "^4.4.2",
     "zod-openapi": "^5.4.6"
   },
   "devDependencies": {
-    "@antfu/eslint-config": "^7.3.0",
-    "@types/node": "^25.2.1",
-    "@vitest/coverage-v8": "^4.0.18",
-    "eslint": "^9.39.2",
-    "obuild": "^0.4.27",
-    "typescript": "^5.9.3",
-    "vitest": "^4.0.18"
+    "@antfu/eslint-config": "^8.2.0",
+    "@types/node": "^25.6.0",
+    "@vitest/coverage-v8": "^4.1.5",
+    "eslint": "^10.3.0",
+    "obuild": "^0.4.34",
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.5"
   }
 }
