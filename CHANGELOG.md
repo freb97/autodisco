@@ -1,3 +1,7 @@
+# 2.0.2
+- Removed unnecessary dependency types from bundle
+- Bumped dependencies
+
 # 2.0.1
 - Added markdown to default generate options
 - Updated documentation
