@@ -9,7 +9,7 @@ import { z } from 'zod'
 /**
  * HTTP methods supported for API probes
  */
-export const httpMethodSchema = z.enum([
+const httpMethodSchema = z.enum([
   'get',
   'put',
   'post',
@@ -20,12 +20,12 @@ export const httpMethodSchema = z.enum([
 /**
  * HTTP headers schema
  */
-export const httpHeadersSchema = z.record(z.string(), z.string())
+const httpHeadersSchema = z.record(z.string(), z.string())
 
 /**
  * Schema for a specific probe endpoint configuration
  */
-export const probeConfigSchema = z.object({
+const probeConfigSchema = z.object({
   params: z.record(z.string(), z.union([z.string(), z.number(), z.boolean()])).optional(),
   query: z.record(z.string(), z.union([z.string(), z.number(), z.boolean()])).optional(),
   headers: httpHeadersSchema.optional(),
@@ -35,7 +35,7 @@ export const probeConfigSchema = z.object({
 /**
  * Schema for the main discover configuration
  */
-export const discoverConfigSchema = z.object({
+const discoverConfigSchema = z.object({
   outputDir: z.string().optional(),
   baseUrl: z.string().optional(),
   headers: httpHeadersSchema.optional(),
@@ -116,11 +116,6 @@ export const discoverConfigSchemaWithDefaults = discoverConfigSchema.omit({
  * HTTP methods supported for API probes
  */
 export type HttpMethod = z.infer<typeof httpMethodSchema>
-
-/**
- * HTTP headers type
- */
-export type HttpHeaders = z.infer<typeof httpHeadersSchema>
 
 /**
  * Endpoint probe configuration

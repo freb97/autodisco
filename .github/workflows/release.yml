@@ -41,6 +41,21 @@ jobs:
       - name: Typecheck Module
         run: bun run typecheck
 
+  knip:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24.15.0
+      - uses: oven-sh/setup-bun@v2
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Run Knip
+        run: bun run knip
+
   test:
     runs-on: ubuntu-latest
 
@@ -68,7 +83,7 @@ jobs:
       - uses: actions/setup-node@v6
         with:
           node-version: 24.15.0
-          registry-url: 'https://registry.npmjs.org'
+          registry-url: "https://registry.npmjs.org"
 
       - name: Install dependencies
         run: bun install --frozen-lockfile

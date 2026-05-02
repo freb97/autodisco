@@ -31,6 +31,7 @@
     "build": "obuild",
     "build:test": "obuild && node dist/index.mjs",
     "dev": "vitest dev",
+    "knip": "knip",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "prepack": "bun run build",
@@ -49,6 +50,7 @@
     "consola": "^3.4.2",
     "defu": "^6.1.7",
     "hookable": "^6.1.1",
+    "knip": "^6.11.0",
     "ufo": "^1.6.4",
     "zod": "^4.4.2",
     "zod-openapi": "^5.4.6"

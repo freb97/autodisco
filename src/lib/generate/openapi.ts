@@ -138,7 +138,7 @@ function getPaths(schemaResults: SchemaResult[], config: ParsedDiscoverConfig) {
  * @param openApiResult OpenAPI schema result as JSON string
  * @param config Parsed discovery configuration
  */
-export async function generateOpenApiTypeScriptTypes(openApiResult: string | undefined, config: ParsedDiscoverConfig) {
+async function generateOpenApiTypeScriptTypes(openApiResult: string | undefined, config: ParsedDiscoverConfig) {
   if (typeof config.generate.openapi !== 'object' || !config.generate.openapi.typescript || !openApiResult) {
     return
   }

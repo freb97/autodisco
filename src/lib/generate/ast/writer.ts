@@ -113,7 +113,7 @@ function writeNode(node: ZodASTNode, depth: number, lang: Language, indent: stri
  *
  * @returns A function that serialises an AST node to source code.
  */
-export function createWriter(options?: { lang?: 'typescript' | 'zod', indent?: string }): (node: ZodASTNode) => string {
+function createWriter(options?: { lang?: 'typescript' | 'zod', indent?: string }): (node: ZodASTNode) => string {
   const lang = options?.lang ?? 'zod'
   const indent = options?.indent ?? '  '
 

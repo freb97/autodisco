@@ -27,7 +27,7 @@ import { getSchemaHash } from '../../helpers/schema'
  * // });
  * ```
  */
-export function merge(schemas: z.ZodType[]): z.ZodType {
+function merge(schemas: z.ZodType[]): z.ZodType {
   const objectSchemas = schemas.filter(schema => schema instanceof z.ZodObject) as z.ZodObject<any>[]
 
   if (objectSchemas.length === 0) {
@@ -101,7 +101,7 @@ export function merge(schemas: z.ZodType[]): z.ZodType {
  *
  * @returns Inferred Zod object schema
  */
-export function inferObject(value: object): z.ZodType {
+function inferObject(value: object): z.ZodType {
   const shape: Record<string, any> = {}
 
   for (const [key, val] of Object.entries(value)) {
@@ -119,7 +119,7 @@ export function inferObject(value: object): z.ZodType {
  *
  * @returns A map of unique Zod schemas
  */
-export function inferUniqueArray(values: any[], discriminatorKey?: string): Map<string, z.ZodType> {
+function inferUniqueArray(values: any[], discriminatorKey?: string): Map<string, z.ZodType> {
   const uniqueSchemas = new Map<string, z.ZodType>()
 
   for (const item of values) {
@@ -145,7 +145,7 @@ export function inferUniqueArray(values: any[], discriminatorKey?: string): Map<
  *
  * @returns Array of inferred Zod schemas
  */
-export function inferArray(value: any[]): z.ZodArray {
+function inferArray(value: any[]): z.ZodArray {
   if (value.length === 0) {
     return z.array(z.any())
   }
@@ -205,7 +205,7 @@ export function inferArray(value: any[]): z.ZodArray {
  *
  * @returns Inferred Zod schema
  */
-export function inferFromValue(value: any): z.ZodType {
+function inferFromValue(value: any): z.ZodType {
   if (value === null) {
     return z.null()
   }

@@ -1,34 +1,34 @@
-export interface StringNode {
+interface StringNode {
   type: 'string'
 }
 
-export interface NumberNode {
+interface NumberNode {
   type: 'number'
 }
 
-export interface BooleanNode {
+interface BooleanNode {
   type: 'boolean'
 }
 
-export interface NullNode {
+interface NullNode {
   type: 'null'
 }
 
-export interface UnknownNode {
+interface UnknownNode {
   type: 'unknown'
 }
 
-export interface LiteralNode {
+interface LiteralNode {
   type: 'literal'
   value: string
 }
 
-export interface OptionalNode {
+interface OptionalNode {
   type: 'optional'
   value: ZodASTNode
 }
 
-export interface ObjectNode {
+interface ObjectNode {
   type: 'object'
   properties: ObjectProperty[]
 }
@@ -38,12 +38,12 @@ export interface ObjectProperty {
   value: ZodASTNode
 }
 
-export interface ArrayNode {
+interface ArrayNode {
   type: 'array'
   element: ZodASTNode
 }
 
-export interface UnionNode {
+interface UnionNode {
   type: 'union'
   discriminator: string
   options: ZodASTNode[]
