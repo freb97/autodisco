@@ -54,7 +54,7 @@
     "zod-openapi": "^5.4.6"
   },
   "devDependencies": {
-    "@antfu/eslint-config": "^7.3.0",
+    "@antfu/eslint-config": "^8.2.0",
     "@types/node": "^25.2.1",
     "@vitest/coverage-v8": "^4.0.18",
     "eslint": "^9.39.2",
