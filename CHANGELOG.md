@@ -1,3 +1,6 @@
+# 2.0.3
+- Improved component output naming
+
 # 2.0.2
 - Removed unnecessary dependency types from bundle
 - Bumped dependencies
