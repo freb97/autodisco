@@ -45,7 +45,7 @@ export const discoverConfigSchema = z.object({
   ),
   generate: z.object({
     openapi: z.object({
-      typescript: z.union([z.boolean(), z.object<import('openapi-typescript').OpenAPITSOptions>()]).optional(),
+      typescript: z.union([z.boolean(), z.record(z.string(), z.unknown())]).optional(),
     }).or(z.boolean()).optional(),
     json: z.boolean().optional(),
     zod: z.boolean().optional(),
@@ -91,7 +91,7 @@ export const discoverConfigSchemaWithDefaults = discoverConfigSchema.omit({
   generate: discoverConfigSchema.shape.generate.transform((generate) => {
     return {
       openapi: typeof generate?.openapi === 'object' && typeof generate?.openapi?.typescript === 'object'
-        ? { typescript: generate.openapi.typescript as import('openapi-typescript').OpenAPITSOptions }
+        ? { typescript: generate.openapi.typescript as Record<string, unknown> }
         : generate?.openapi,
       json: generate?.json,
       zod: generate?.zod,

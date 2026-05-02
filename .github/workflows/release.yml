@@ -14,6 +14,9 @@ jobs:
 
     steps:
       - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24.15.0
       - uses: oven-sh/setup-bun@v2
 
       - name: Install dependencies
@@ -27,6 +30,9 @@ jobs:
 
     steps:
       - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24.15.0
       - uses: oven-sh/setup-bun@v2
 
       - name: Install dependencies
@@ -40,6 +46,9 @@ jobs:
 
     steps:
       - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24.15.0
       - uses: oven-sh/setup-bun@v2
 
       - name: Install dependencies
