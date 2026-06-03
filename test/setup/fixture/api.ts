@@ -86,6 +86,87 @@ export default function createTestAPI(port = 3456) {
       return
     }
 
+    // GET /facets - Array with two "range" variants (tests discriminated union merging)
+    // and a field that is sometimes [] sometimes number (tests union deduplication)
+    if (method === 'GET' && url === '/facets') {
+      res.writeHead(200)
+      res.end(JSON.stringify([
+        {
+          type: 'ignore',
+          counts: [{ count: 5, value: 'red' }],
+          field_name: 'color',
+          stats: { total_values: 1 },
+        },
+        {
+          type: 'range',
+          field_name: 'price',
+          stats: { max: 100, min: 0 },
+          scores: [],
+        },
+        {
+          type: 'range',
+          field_name: 'weight',
+          stats: { max: 50, min: 5, total_values: 3 },
+          counts: [{ count: 2, value: 'medium' }],
+          scores: 15,
+        },
+      ]))
+      return
+    }
+
+    // GET /facet-counts - field_name is high-cardinality and appears before type.
+    // Discriminator inference should still prefer type over field_name.
+    if (method === 'GET' && url === '/facet-counts') {
+      res.writeHead(200)
+      res.end(JSON.stringify([
+        {
+          field_name: 'price',
+          type: 'range',
+          stats: { min: 10, max: 100 },
+        },
+        {
+          field_name: 'stock',
+          type: 'range',
+          stats: { min: 0, max: 50, total_values: 8 },
+          counts: [{ count: 3, value: 'in-stock' }],
+        },
+        {
+          field_name: 'manufacturer',
+          type: 'ignore',
+          stats: { total_values: 4 },
+          counts: [{ count: 2, value: 'acme' }],
+        },
+      ]))
+      return
+    }
+
+    // GET /kind-variants - every kind value is unique, but kind should still
+    // be a useful discriminator because it is semantically strong.
+    if (method === 'GET' && url === '/kind-variants') {
+      res.writeHead(200)
+      res.end(JSON.stringify([
+        {
+          kind: 'document',
+          found: 10,
+          llm: false,
+          hits: [{ highlighted: { id: 'p1', type: 'ProductDataType' } }],
+        },
+        {
+          kind: 'facet.a',
+          found: 2,
+          field_name: 'a',
+          hits: [{ highlighted: 'A', count: 2, value: 'A' }],
+        },
+        {
+          kind: 'facet.b',
+          found: 3,
+          field_name: 'b',
+          hits: [{ highlighted: 'B', count: 3, value: 'B' }],
+        },
+      ]))
+      return
+    }
+
     // GET /suggest?q=wireless - Array of suggestions (product | category | searchTerm)[]
     if (method === 'GET' && url.startsWith('/suggest')) {
       res.writeHead(200)

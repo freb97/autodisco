@@ -24,8 +24,9 @@ function writeUnknown(lang: Language): string {
   return lang === 'zod' ? 'z.unknown()' : 'unknown'
 }
 
-function writeLiteral(value: string, lang: Language): string {
-  return lang === 'zod' ? `z.literal("${value}")` : `"${value}"`
+function writeLiteral(value: string | number | boolean | null, lang: Language): string {
+  const serialized = JSON.stringify(value)
+  return lang === 'zod' ? `z.literal(${serialized})` : serialized
 }
 
 function writeOptional(
@@ -75,7 +76,7 @@ function writeUnion(
     ? discriminator.length > 0
       ? `z.discriminatedUnion("${discriminator}", [\n${opts}\n${pad(indent, depth)}])`
       : `z.union([\n${opts}\n${pad(indent, depth)}])`
-    : `(${opts}${pad(indent, depth)})`
+    : `(${opts})`
 }
 
 function writeNode(node: ZodASTNode, depth: number, lang: Language, indent: string): string {

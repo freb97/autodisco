@@ -20,7 +20,7 @@ interface UnknownNode {
 
 interface LiteralNode {
   type: 'literal'
-  value: string
+  value: string | number | boolean | null
 }
 
 interface OptionalNode {

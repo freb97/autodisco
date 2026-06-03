@@ -5,6 +5,38 @@ import { z } from 'zod'
 
 import { getSchemaHash } from '../../helpers/schema'
 
+interface InferOptions {
+  discriminators?: string[] | boolean
+}
+
+/**
+ * Checks if a Zod schema is an optional schema (ZodOptional)
+ *
+ * @param schema The Zod schema to check
+ *
+ * @returns True if the schema is a ZodOptional, false otherwise
+ */
+function isOptionalSchema(schema: z.ZodTypeAny): schema is z.ZodOptional<any> {
+  return schema instanceof z.ZodOptional
+}
+
+/**
+ * Unwraps nested ZodOptional schemas to get the underlying schema
+ *
+ * @param schema The Zod schema to unwrap
+ *
+ * @returns The unwrapped Zod schema
+ */
+function unwrapOptionalSchema(schema: z.ZodTypeAny): z.ZodTypeAny {
+  let current = schema
+
+  while (isOptionalSchema(current)) {
+    current = current._zod.def.innerType as z.ZodTypeAny
+  }
+
+  return current
+}
+
 /**
  * Merges multiple Zod schemas into one
  *
@@ -58,37 +90,46 @@ function merge(schemas: z.ZodType[]): z.ZodType {
 
   for (const [key, { schemas: propSchemas, count }] of allProperties) {
     let mergedProp: z.ZodTypeAny
+    const hasOptionalVariant = propSchemas.some(isOptionalSchema)
+    const normalizedSchemas = propSchemas.map(unwrapOptionalSchema)
 
-    const areAllObjects = propSchemas.every(s => s instanceof z.ZodObject)
+    const areAllObjects = normalizedSchemas.every(s => s instanceof z.ZodObject)
 
-    if (areAllObjects && propSchemas.length > 1) {
-      mergedProp = merge(propSchemas)
+    if (areAllObjects && normalizedSchemas.length > 1) {
+      mergedProp = merge(normalizedSchemas)
     }
-    else if (propSchemas.length === 1) {
-      mergedProp = propSchemas[0]!
+    else if (normalizedSchemas.length === 1) {
+      mergedProp = normalizedSchemas[0]!
     }
     else {
-      const hashes = propSchemas.map(s => getSchemaHash(s))
+      const hashes = normalizedSchemas.map(s => getSchemaHash(s))
       const uniqueHashes = new Set(hashes)
 
       if (uniqueHashes.size === 1) {
-        mergedProp = propSchemas[0]!
+        mergedProp = normalizedSchemas[0]!
       }
       else {
         mergedProp = areAllObjects
-          ? merge(propSchemas)
-          : propSchemas.every(s => s instanceof z.ZodArray)
-            ? z.array(merge(propSchemas.map(s => (s as z.ZodArray<any>).element).filter(Boolean)))
-            : z.union(propSchemas)
+          ? merge(normalizedSchemas)
+          : normalizedSchemas.every(s => s instanceof z.ZodArray)
+            ? z.array(merge(normalizedSchemas.map(s => (s as z.ZodArray<any>).element).filter(Boolean)))
+            : (() => {
+                const seen = new Map<string, z.ZodTypeAny>()
+                for (const s of normalizedSchemas) {
+                  const h = getSchemaHash(s)
+                  if (!seen.has(h))
+                    seen.set(h, s)
+                }
+                const unique = Array.from(seen.values())
+                return unique.length === 1
+                  ? unique[0]!
+                  : z.union(unique as [z.ZodTypeAny, z.ZodTypeAny, ...z.ZodTypeAny[]])
+              })()
       }
     }
 
-    if (count === objectSchemas.length) {
-      mergedShape[key] = mergedProp
-    }
-    else {
-      mergedShape[key] = mergedProp.optional()
-    }
+    const shouldBeOptional = count !== objectSchemas.length || hasOptionalVariant
+    mergedShape[key] = shouldBeOptional ? mergedProp.optional() : mergedProp
   }
 
   return z.object(mergedShape)
@@ -101,11 +142,11 @@ function merge(schemas: z.ZodType[]): z.ZodType {
  *
  * @returns Inferred Zod object schema
  */
-function inferObject(value: object): z.ZodType {
+function inferObject(value: object, options?: InferOptions): z.ZodType {
   const shape: Record<string, any> = {}
 
   for (const [key, val] of Object.entries(value)) {
-    shape[key] = inferFromValue(val)
+    shape[key] = inferFromValue(val, options)
   }
 
   return z.object(shape)
@@ -119,11 +160,11 @@ function inferObject(value: object): z.ZodType {
  *
  * @returns A map of unique Zod schemas
  */
-function inferUniqueArray(values: any[], discriminatorKey?: string): Map<string, z.ZodType> {
+function inferUniqueArray(values: any[], discriminatorKey?: string, options?: InferOptions): Map<string, z.ZodType> {
   const uniqueSchemas = new Map<string, z.ZodType>()
 
   for (const item of values) {
-    const schema = inferFromValue(item)
+    const schema = inferFromValue(item, options)
     const hash = getSchemaHash(schema)
 
     if (discriminatorKey && schema instanceof z.ZodObject) {
@@ -139,22 +180,49 @@ function inferUniqueArray(values: any[], discriminatorKey?: string): Map<string,
 }
 
 /**
+ * Gets a score for a potential discriminator key based on its name and presence in the config
+ *
+ * @param key Candidate discriminator key
+ * @param discriminators Optional list of preferred discriminator keys from the config
+ *
+ * @returns Score indicating how suitable the key is as a discriminator (higher is better)
+ */
+function getDiscriminatorNameScore(key: string, discriminators?: string[] | boolean): number {
+  // Preferred discriminator names from config
+  if (Array.isArray(discriminators) && discriminators.includes(key)) {
+    return 100
+  }
+
+  // Fallback: common discriminator names (preferred if config.discriminators is true)
+  if (!Array.isArray(discriminators) && discriminators && /^(?:type|kind|variant|tag|category|status)$/i.test(key)) {
+    return 100
+  }
+
+  // Keys that end with "type" (e.g. "user_type", "event.type")
+  if (/(?:^|_|\.)type$/i.test(key) || /kind|variant|tag|category|status/i.test(key)) {
+    return 30
+  }
+
+  return 0
+}
+
+/**
  * Infers a Zod array schema from a given array of values
  *
  * @param value Array of values to infer the schema from
  *
  * @returns Array of inferred Zod schemas
  */
-function inferArray(value: any[]): z.ZodArray {
+function inferArray(value: any[], options?: InferOptions): z.ZodArray {
   if (value.length === 0) {
     return z.array(z.any())
   }
 
   if (value.length === 1) {
-    return z.array(inferFromValue(value[0]!))
+    return z.array(inferFromValue(value[0]!, options))
   }
 
-  const uniqueSchemas = inferUniqueArray(value)
+  const uniqueSchemas = inferUniqueArray(value, undefined, options)
 
   if (uniqueSchemas.size === 1) {
     return z.array(uniqueSchemas.values().next().value!)
@@ -163,7 +231,7 @@ function inferArray(value: any[]): z.ZodArray {
   const discriminatorCandidates = new Set<string>()
 
   for (const key of Object.keys(value[0]!)) {
-    if (value.every(item => item && typeof item === 'object' && key in item && typeof item[key] !== 'object' && item[key] !== '')) {
+    if (value.every(item => item && typeof item === 'object' && key in item && typeof item[key] === 'string' && item[key] !== '')) {
       discriminatorCandidates.add(key)
     }
   }
@@ -172,7 +240,18 @@ function inferArray(value: any[]): z.ZodArray {
     return z.array(merge(Array.from(uniqueSchemas.values())))
   }
 
+  const validDiscriminators: {
+    key: string
+    groupsCount: number
+    repetitions: number
+    schemas: [z.ZodObject<any>, ...z.ZodObject<any>[]]
+    score: number
+  }[] = []
+
   for (const discriminator of discriminatorCandidates) {
+    const discriminatorNameScore = getDiscriminatorNameScore(discriminator, options?.discriminators)
+    const allowUniquePreferredDiscriminator = discriminatorNameScore >= 100
+
     const groupedByDiscriminator = value.reduce((acc, item) => {
       const key = item[discriminator]
 
@@ -185,14 +264,67 @@ function inferArray(value: any[]): z.ZodArray {
       return acc
     }, {} as Record<string, any[]>)
 
-    if (Object.keys(groupedByDiscriminator).length === uniqueSchemas.size) {
-      const discriminatedSchemas = Array.from(inferUniqueArray(value, discriminator).values())
-        .filter((schema): schema is z.ZodObject<any> => schema instanceof z.ZodObject)
+    const groups = Object.entries(groupedByDiscriminator) as [string, any[]][]
 
-      if (discriminatedSchemas.length > 0) {
-        return z.array(z.discriminatedUnion(discriminator, discriminatedSchemas as [z.ZodObject<any>, ...z.ZodObject<any>[]]))
-      }
+    if (groups.length < 2) {
+      continue
     }
+
+    // Ignore identity-like keys where every item gets its own variant,
+    // except for preferred discriminator names (type/kind/...) in small arrays.
+    if (groups.length === value.length && !(allowUniquePreferredDiscriminator && groups.length <= 10)) {
+      continue
+    }
+
+    const discriminatedSchemas: z.ZodObject<any>[] = []
+    let canDiscriminate = true
+
+    for (const [discValue, items] of groups) {
+      const groupItemSchemas = items.map((item: any) => inferFromValue(item, options))
+
+      if (!groupItemSchemas.every((s: z.ZodType) => s instanceof z.ZodObject)) {
+        canDiscriminate = false
+        break
+      }
+
+      const merged = groupItemSchemas.length === 1
+        ? groupItemSchemas[0]!
+        : merge(groupItemSchemas)
+
+      if (!(merged instanceof z.ZodObject)) {
+        canDiscriminate = false
+        break
+      }
+
+      merged.shape[discriminator] = z.literal(discValue)
+      discriminatedSchemas.push(merged)
+    }
+
+    if (canDiscriminate && discriminatedSchemas.length >= 2) {
+      const repetitions = value.length - groups.length
+      const score = discriminatorNameScore + (repetitions * 10) - groups.length
+
+      validDiscriminators.push({
+        key: discriminator,
+        groupsCount: groups.length,
+        repetitions,
+        schemas: discriminatedSchemas as [z.ZodObject<any>, ...z.ZodObject<any>[]],
+        score,
+      })
+    }
+  }
+
+  if (validDiscriminators.length > 0) {
+    validDiscriminators.sort((a, b) => {
+      if (b.score !== a.score)
+        return b.score - a.score
+      if (b.repetitions !== a.repetitions)
+        return b.repetitions - a.repetitions
+      return a.groupsCount - b.groupsCount
+    })
+
+    const best = validDiscriminators[0]!
+    return z.array(z.discriminatedUnion(best.key, best.schemas))
   }
 
   return z.array(merge(Array.from(uniqueSchemas.values())))
@@ -205,17 +337,17 @@ function inferArray(value: any[]): z.ZodArray {
  *
  * @returns Inferred Zod schema
  */
-function inferFromValue(value: any): z.ZodType {
+function inferFromValue(value: any, options?: InferOptions): z.ZodType {
   if (value === null) {
     return z.null()
   }
 
   if (Array.isArray(value)) {
-    return inferArray(value)
+    return inferArray(value, options)
   }
 
   if (typeof value === 'object') {
-    return inferObject(value)
+    return inferObject(value, options)
   }
 
   if (typeof value === 'string')
@@ -253,10 +385,13 @@ export async function parseSchemas(probeResults: ProbeResult[], config: ParsedDi
       const path = result.path
       const schemaConfig = result.config
       const samples = result.samples
+      const inferOptions: InferOptions = {
+        discriminators: schemaConfig.discriminators,
+      }
 
       await config.hooks.callHook('zod:runtime:generate', config, method, path, schemaConfig, samples)
 
-      const inferredSchemas = result.samples.map(sample => inferFromValue(JSON.parse(sample)))
+      const inferredSchemas = result.samples.map(sample => inferFromValue(JSON.parse(sample), inferOptions))
       const schema = merge(inferredSchemas)
 
       schemas.push({

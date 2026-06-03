@@ -30,6 +30,7 @@ const probeConfigSchema = z.object({
   query: z.record(z.string(), z.union([z.string(), z.number(), z.boolean()])).optional(),
   headers: httpHeadersSchema.optional(),
   body: z.any().optional(),
+  discriminators: z.array(z.string()).optional().or(z.boolean()),
 })
 
 /**
@@ -82,6 +83,12 @@ export const discoverConfigSchemaWithDefaults = discoverConfigSchema.omit({
         }
         else {
           transformed[method][endpoint] = [config]
+        }
+
+        for (const probeConfig of transformed[method][endpoint]) {
+          if (probeConfig.discriminators === undefined) {
+            probeConfig.discriminators = true
+          }
         }
       }
     }

@@ -53,7 +53,7 @@ export function buildAST(schema: z.ZodType): ZodASTNode {
   if (schema instanceof z.ZodLiteral) {
     return {
       type: 'literal',
-      value: String(schema._zod.def.values.at(0)),
+      value: schema._zod.def.values.at(0) as string | number | boolean | null,
     }
   }
 
