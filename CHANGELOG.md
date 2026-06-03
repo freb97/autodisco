@@ -1,3 +1,9 @@
+# 2.0.4
+- Added discriminator name scoring to prefer configured names and common patterns
+- Improved literal value handling to support numbers, booleans, and null in addition to strings
+- Fixed duplicate types in output when the same schema is used in multiple places
+- Improved type output formatting
+
 # 2.0.3
 - Improved component output naming
 
