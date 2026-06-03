@@ -145,6 +145,8 @@ await discover({
         params: {
           id: 1,
         },
+        // You can specify preferred discriminator keys for better schema inference of arrays with varying object structures
+        discriminators: ['type']
       },
 
       '/comments': {
@@ -396,8 +398,9 @@ If the elements have varying structures, all possible schemas are searched for a
 property name with different values.
 If a common discriminator is found and the number of unique schemas matches the number of available discriminators, the array
 will be typed as a discriminated union.
-When no common structure can be found, the array is inferred to contain a single object with optional properties representing
-all possible fields.
+If multiple discriminators are available, a scoring system is used to determine the best discriminator key based on the configuration and common naming patterns.
+You can also provide preferred discriminator keys in the configuration for better inference results.
+When no common structure can be found or discriminators are set to `false`, arrays are inferred to contain a single object with optional properties representing all possible fields instead.
 
 Objects are inferred by analyzing each property and determining its type based on the values present in the responses.
 If a property is missing in some responses, it is marked as optional.
