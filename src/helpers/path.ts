@@ -43,6 +43,7 @@ export function resolveTypeName(path: string) {
       .replaceAll(/^https?:\/\/[^/]+/g, '') // Remove URL origin, e.g., https://api.example.com/customer.test/auth/users/ -> /customer.test/auth/users/
       .replaceAll(/\/[^/]*\.[^/]*/g, '') // Remove dot-containing segments, e.g., /customer.test/auth/users/ -> /auth/users/
       .replaceAll(/\{[^}]+\}/g, '') // Remove params, e.g., /auth/users/{id} -> /auth/users/
+      .replaceAll(/[-_]+/g, '/') // Remove dashes and underscores, e.g., /auth/user-profile/ -> /auth/user/profile/
       .split('?')[0] ?? '', // Remove query, e.g., /auth/users/?active=true -> /auth/users/
   ))
 
