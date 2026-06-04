@@ -1,3 +1,7 @@
+# 2.0.5
+- Fixed component naming for routes using dashes and underscores
+- Added union deduplication for generated type output
+
 # 2.0.4
 - Added discriminator name scoring to prefer configured names and common patterns
 - Improved literal value handling to support numbers, booleans, and null in addition to strings
