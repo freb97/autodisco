@@ -38,6 +38,41 @@ function unwrapOptionalSchema(schema: z.ZodTypeAny): z.ZodTypeAny {
 }
 
 /**
+ * Flattens nested ZodUnion schemas into a single array of member schemas
+ *
+ * @param schema The Zod schema to flatten
+ *
+ * @returns An array of Zod schemas representing the flattened union members
+ */
+function flattenUnionMembers(schema: z.ZodTypeAny): z.ZodTypeAny[] {
+  if (schema instanceof z.ZodUnion) {
+    return schema._zod.def.options.flatMap(option => flattenUnionMembers(option as z.ZodTypeAny))
+  }
+
+  return [schema]
+}
+
+/**
+ * Deduplicates an array of Zod schemas by their structural content
+ *
+ * @param schemas Array of Zod schemas to deduplicate
+ *
+ * @returns Array of unique Zod schemas
+ */
+function dedupeSchemas(schemas: z.ZodTypeAny[]): z.ZodTypeAny[] {
+  const seen = new Map<string, z.ZodTypeAny>()
+
+  for (const schema of schemas) {
+    const hash = getSchemaHash(schema)
+    if (!seen.has(hash)) {
+      seen.set(hash, schema)
+    }
+  }
+
+  return Array.from(seen.values())
+}
+
+/**
  * Merges multiple Zod schemas into one
  *
  * @param schemas Array of Zod schemas to merge
@@ -91,7 +126,9 @@ function merge(schemas: z.ZodType[]): z.ZodType {
   for (const [key, { schemas: propSchemas, count }] of allProperties) {
     let mergedProp: z.ZodTypeAny
     const hasOptionalVariant = propSchemas.some(isOptionalSchema)
-    const normalizedSchemas = propSchemas.map(unwrapOptionalSchema)
+    const normalizedSchemas = dedupeSchemas(propSchemas
+      .map(unwrapOptionalSchema)
+      .flatMap(flattenUnionMembers))
 
     const areAllObjects = normalizedSchemas.every(s => s instanceof z.ZodObject)
 
@@ -102,10 +139,7 @@ function merge(schemas: z.ZodType[]): z.ZodType {
       mergedProp = normalizedSchemas[0]!
     }
     else {
-      const hashes = normalizedSchemas.map(s => getSchemaHash(s))
-      const uniqueHashes = new Set(hashes)
-
-      if (uniqueHashes.size === 1) {
+      if (normalizedSchemas.length === 1) {
         mergedProp = normalizedSchemas[0]!
       }
       else {
@@ -113,18 +147,7 @@ function merge(schemas: z.ZodType[]): z.ZodType {
           ? merge(normalizedSchemas)
           : normalizedSchemas.every(s => s instanceof z.ZodArray)
             ? z.array(merge(normalizedSchemas.map(s => (s as z.ZodArray<any>).element).filter(Boolean)))
-            : (() => {
-                const seen = new Map<string, z.ZodTypeAny>()
-                for (const s of normalizedSchemas) {
-                  const h = getSchemaHash(s)
-                  if (!seen.has(h))
-                    seen.set(h, s)
-                }
-                const unique = Array.from(seen.values())
-                return unique.length === 1
-                  ? unique[0]!
-                  : z.union(unique as [z.ZodTypeAny, z.ZodTypeAny, ...z.ZodTypeAny[]])
-              })()
+            : z.union(normalizedSchemas as [z.ZodTypeAny, z.ZodTypeAny, ...z.ZodTypeAny[]])
       }
     }
 

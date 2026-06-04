@@ -67,8 +67,33 @@ function writeUnion(
   lang: Language,
   indent: string,
 ): string {
+  const normalizedOptions = discriminator.length > 0
+    ? options
+    : (() => {
+        const flattened: ZodASTNode[] = []
+
+        for (const option of options) {
+          if (option.type === 'union' && option.discriminator.length === 0) {
+            flattened.push(...option.options)
+          }
+          else {
+            flattened.push(option)
+          }
+        }
+
+        const unique = new Map<string, ZodASTNode>()
+        for (const option of flattened) {
+          const key = JSON.stringify(option)
+          if (!unique.has(key)) {
+            unique.set(key, option)
+          }
+        }
+
+        return Array.from(unique.values())
+      })()
+
   const inner = lang === 'zod' ? depth + 1 : depth
-  const opts = options
+  const opts = normalizedOptions
     .map(option => (lang === 'zod' ? pad(indent, inner) : '') + writeNode(option, inner, lang, indent))
     .join(lang === 'zod' ? ',\n' : ' | ')
 

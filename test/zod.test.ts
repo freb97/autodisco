@@ -145,10 +145,10 @@ describe('zod schema generation', () => {
       },
     })
 
-    const schemaStat = await stat(`${outputDir}/zod/get/Facet-counts.ts`)
+    const schemaStat = await stat(`${outputDir}/zod/get/FacetCounts.ts`)
     expect(schemaStat.isFile()).toBe(true)
 
-    const schemaContent = await readFile(`${outputDir}/zod/get/Facet-counts.ts`, 'utf-8')
+    const schemaContent = await readFile(`${outputDir}/zod/get/FacetCounts.ts`, 'utf-8')
 
     expect(schemaContent).toContain('z.discriminatedUnion("type", [')
     expect(schemaContent).toContain('"type": z.literal("range")')
@@ -173,10 +173,10 @@ describe('zod schema generation', () => {
       },
     })
 
-    const schemaStat = await stat(`${outputDir}/zod/get/Kind-variants.ts`)
+    const schemaStat = await stat(`${outputDir}/zod/get/KindVariants.ts`)
     expect(schemaStat.isFile()).toBe(true)
 
-    const schemaContent = await readFile(`${outputDir}/zod/get/Kind-variants.ts`, 'utf-8')
+    const schemaContent = await readFile(`${outputDir}/zod/get/KindVariants.ts`, 'utf-8')
 
     expect(schemaContent).toContain('z.discriminatedUnion("kind", [')
     expect(schemaContent).toContain('"kind": z.literal("document")')

@@ -127,6 +127,9 @@ describe('typescript type generation', () => {
     // optionality should not be duplicated in unions
     expect(schemaContent).not.toMatch(/\| undefined \| undefined/)
 
+    // nested union-of-union patterns should be flattened
+    expect(schemaContent).not.toMatch(/\(\([^)|]*\|[^)]*\) \| \([^)|]*\|[^)]*\)\)/)
+
     // generated unions should not include trailing padding before closing paren
     expect(schemaContent).not.toMatch(/\w\s{3,}\)/)
 
@@ -150,10 +153,10 @@ describe('typescript type generation', () => {
       },
     })
 
-    const schemaStat = await stat(`${outputDir}/typescript/get/Facet-counts.ts`)
+    const schemaStat = await stat(`${outputDir}/typescript/get/FacetCounts.ts`)
     expect(schemaStat.isFile()).toBe(true)
 
-    const schemaContent = await readFile(`${outputDir}/typescript/get/Facet-counts.ts`, 'utf-8')
+    const schemaContent = await readFile(`${outputDir}/typescript/get/FacetCounts.ts`, 'utf-8')
 
     // Must discriminate by type and keep type as literals.
     expect(schemaContent).toContain('"type": "range"')
@@ -179,10 +182,10 @@ describe('typescript type generation', () => {
       },
     })
 
-    const schemaStat = await stat(`${outputDir}/typescript/get/Kind-variants.ts`)
+    const schemaStat = await stat(`${outputDir}/typescript/get/KindVariants.ts`)
     expect(schemaStat.isFile()).toBe(true)
 
-    const schemaContent = await readFile(`${outputDir}/typescript/get/Kind-variants.ts`, 'utf-8')
+    const schemaContent = await readFile(`${outputDir}/typescript/get/KindVariants.ts`, 'utf-8')
 
     expect(schemaContent).toContain('"kind": "document"')
     expect(schemaContent).toContain('"kind": "facet.a"')
