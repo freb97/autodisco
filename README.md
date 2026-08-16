@@ -542,10 +542,10 @@ This project is heavily inspired by and built with the following libraries:
 
 ## License
 
-Published under the [MIT License](https://github.com/freb97/autodisco/tree/main/LICENSE).
+Published under the [MIT License](https://github.com/bussmann-io/autodisco/tree/main/LICENSE).
 
-[github-actions-src]: https://github.com/freb97/autodisco/actions/workflows/test.yml/badge.svg
-[github-actions-href]: https://github.com/freb97/autodisco/actions
+[github-actions-src]: https://github.com/bussmann-io/autodisco/actions/workflows/test.yml/badge.svg
+[github-actions-href]: https://github.com/bussmann-io/autodisco/actions
 
 [npm-version-src]: https://img.shields.io/npm/v/autodisco/latest.svg?style=flat&colorA=18181B&colorB=31C553
 [npm-version-href]: https://npmjs.com/package/autodisco
@@ -553,5 +553,5 @@ Published under the [MIT License](https://github.com/freb97/autodisco/tree/main/
 [npm-last-update-src]: https://img.shields.io/npm/last-update/autodisco.svg?style=flat&colorA=18181B&colorB=31C553
 [npm-last-update-href]: https://npmjs.com/package/autodisco
 
-[license-src]: https://img.shields.io/github/license/freb97/autodisco.svg?style=flat&colorA=18181B&colorB=31C553
-[license-href]: https://github.com/freb97/autodisco/tree/main/LICENSE
+[license-src]: https://img.shields.io/github/license/bussmann-io/autodisco.svg?style=flat&colorA=18181B&colorB=31C553
+[license-href]: https://github.com/bussmann-io/autodisco/tree/main/LICENSE

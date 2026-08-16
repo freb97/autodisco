@@ -6,7 +6,7 @@
   "description": "Automatically generate OpenAPI schemas by probing RESTful APIs",
   "author": "Frederik Bußmann <frederik@bussmann.io>",
   "license": "MIT",
-  "repository": "freb97/autodisco",
+  "repository": "bussmann-io/autodisco",
   "keywords": [
     "codegen",
     "openapi",
