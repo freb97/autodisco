@@ -4,7 +4,7 @@ import type { ParsedDiscoverConfig } from '../config'
 import { mkdir, writeFile } from 'node:fs/promises'
 import { joinURL } from 'ufo'
 
-import { resolveTypeName } from '../../helpers/path'
+import { resolveTypeNames } from '../../helpers/path'
 
 /**
  * Generate JSON schema from parsed schema results
@@ -19,8 +19,10 @@ export async function generateJsonSchema(schemaResults: SchemaResult[], config: 
     return
   }
 
+  const names = resolveTypeNames(schemaResults, config.baseUrl)
+
   const components = schemaResults.map(result => ({
-    name: resolveTypeName(joinURL(config.baseUrl ?? '', result.path)),
+    name: names.get(`${result.method} ${result.path}`)!,
     path: result.path,
     method: result.method,
     output: result.schema,

@@ -3,6 +3,7 @@
   "workspaces": {
     ".": {
       "entry": [
+        "src/index.ts",
         "src/cli/index.ts"
       ],
       "project": [

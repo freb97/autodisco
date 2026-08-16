@@ -8,18 +8,19 @@ import { joinURL } from 'ufo'
 import { z } from 'zod'
 import { createDocument } from 'zod-openapi'
 
-import { resolveTypeName } from '../../helpers/path'
+import { resolveTypeNames } from '../../helpers/path'
 
 /**
  * Gets the name of the schema based on the HTTP method and path
  *
  * @param schemaResult Schema result to get the name from
+ * @param names Map of resolved unique type names
  *
  * @returns Name of the schema in the format MethodPath, e.g. GetUsers, PostUsers, etc.
  */
-function getName(schemaResult: SchemaResult, config: ParsedDiscoverConfig) {
+function getName(schemaResult: SchemaResult, names: Map<string, string>) {
   const method = String(schemaResult.method).charAt(0).toUpperCase() + schemaResult.method.slice(1).toLowerCase()
-  const name = resolveTypeName(joinURL(config.baseUrl ?? '', schemaResult.path))
+  const name = names.get(`${schemaResult.method} ${schemaResult.path}`)!
 
   return `${method}${name}`
 }
@@ -46,14 +47,15 @@ function getParams(params?: Record<string, string | number | boolean>, optional 
  * Get OpenAPI components from schema results
  *
  * @param schemaResults Array of schema results
+ * @param names Map of resolved unique type names
  *
  * @returns OpenAPI components object
  */
-function getComponents(schemaResults: SchemaResult[], config: ParsedDiscoverConfig) {
+function getComponents(schemaResults: SchemaResult[], names: Map<string, string>) {
   const components: ZodOpenApiComponentsObject = {}
 
   for (const schemaResult of schemaResults) {
-    const name = getName(schemaResult, config)
+    const name = getName(schemaResult, names)
 
     components.schemas ??= {}
     components.schemas[name] = schemaResult.schema
@@ -83,22 +85,25 @@ function getComponents(schemaResults: SchemaResult[], config: ParsedDiscoverConf
  *
  * @param schemaResults Array of schema results
  * @param config Parsed discovery configuration
+ * @param names Map of resolved unique type names
  *
  * @returns OpenAPI paths object
  */
-function getPaths(schemaResults: SchemaResult[], config: ParsedDiscoverConfig) {
+function getPaths(schemaResults: SchemaResult[], config: ParsedDiscoverConfig, names: Map<string, string>) {
   const paths: ZodOpenApiPathsObject = {}
 
   for (const schemaResult of schemaResults) {
     const method = schemaResult.method
 
-    const name = getName(schemaResult, config)
+    const name = getName(schemaResult, names)
 
     const params = getParams(schemaResult.config.params)
     const query = getParams(schemaResult.config.query, true)
     const headers = getParams({ ...config.headers, ...schemaResult.config.headers }, true)
 
     paths[schemaResult.path] = {
+      ...paths[schemaResult.path],
+
       [method.toLowerCase()]: {
         ...(params || query || headers
           ? { requestParams: {
@@ -180,8 +185,10 @@ export async function generateOpenApiSchema(schemaResults: SchemaResult[], confi
     return
   }
 
-  const components = getComponents(schemaResults, config)
-  const paths = getPaths(schemaResults, config)
+  const names = resolveTypeNames(schemaResults, config.baseUrl)
+
+  const components = getComponents(schemaResults, names)
+  const paths = getPaths(schemaResults, config, names)
 
   await config.hooks.callHook('openapi:generate', config, components, paths)
 

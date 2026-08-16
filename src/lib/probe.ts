@@ -7,6 +7,42 @@ import { joinURL } from 'ufo'
 import { resolvePath } from '../helpers/path'
 
 /**
+ * Serialize a configured request body.
+ *
+ * @param body Configured request body
+ * @param headers Configured request headers
+ *
+ * @returns The serialized body and the headers to send it with
+ */
+function serializeBody(body: unknown, headers: Record<string, string> = {}) {
+  if (body === undefined || body === null) {
+    return { body: undefined, headers }
+  }
+
+  if (
+    typeof body === 'string'
+    || body instanceof FormData
+    || body instanceof URLSearchParams
+    || body instanceof Blob
+    || body instanceof ArrayBuffer
+    || body instanceof ReadableStream
+  ) {
+    return { body, headers }
+  }
+
+  if (ArrayBuffer.isView(body)) {
+    return { body: body as Uint8Array, headers }
+  }
+
+  const hasContentType = Object.keys(headers).some(header => header.toLowerCase() === 'content-type')
+
+  return {
+    body: JSON.stringify(body),
+    headers: hasContentType ? headers : { ...headers, 'Content-Type': 'application/json' },
+  }
+}
+
+/**
  * Create probes for all endpoints defined in the configuration
  *
  * @param config Parsed discovery configuration
@@ -31,21 +67,24 @@ function createProbes(config: ParsedDiscoverConfig) {
 
       await config.hooks.callHook('probe:request', method, path, parsedProbeConfig)
 
+      const { body, headers } = serializeBody(parsedProbeConfig.body, parsedProbeConfig.headers)
+
       const response = await fetch(joinURL(parsedProbeConfig.baseUrl ?? '', resolvePath(path, parsedProbeConfig)), {
         method,
-        ...(parsedProbeConfig.body ? { body: parsedProbeConfig.body } : {}),
-        ...(parsedProbeConfig.headers ? { headers: parsedProbeConfig.headers } : {}),
+        ...(body !== undefined ? { body } : {}),
+        ...(Object.keys(headers).length > 0 ? { headers } : {}),
       }).then(async (response) => {
         if (!response.ok) {
           config.logger.error(
-            `Received error response fetching "${method} ${path}": ${response.statusText}`,
+            `Received error response fetching "${method} ${path}": ${response.status} ${response.statusText}`,
           )
+
+          return ''
         }
-        else {
-          config.logger.debug(
-            `Received success response fetching "${method} ${path}": ${response.statusText}`,
-          )
-        }
+
+        config.logger.debug(
+          `Received success response fetching "${method} ${path}": ${response.statusText}`,
+        )
 
         return response.text()
       }).catch((error) => {
@@ -54,7 +93,7 @@ function createProbes(config: ParsedDiscoverConfig) {
         return ''
       })
 
-      await config.hooks.callHook('probe:response', method, path, probeConfig, response)
+      await config.hooks.callHook('probe:response', method, path, parsedProbeConfig, response)
 
       results.push({
         method,
@@ -64,10 +103,14 @@ function createProbes(config: ParsedDiscoverConfig) {
       })
     }
 
-    return results.filter(result => result.samples.length > 0 && result.samples.some(sample => sample.length > 0))
+    return {
+      method,
+      path,
+      results: results.filter(result => result.samples.some(sample => sample.length > 0)),
+    }
   }
 
-  const probes: Promise<ProbeResult[]>[] = []
+  const probes: Promise<{ method: HttpMethod, path: string, results: ProbeResult[] }>[] = []
 
   for (const [method, endpoints] of Object.entries(config.probes)) {
     for (const [path, probeConfigs] of Object.entries(endpoints)) {
@@ -88,19 +131,18 @@ function createProbes(config: ParsedDiscoverConfig) {
 export async function probeEndpoints(config: ParsedDiscoverConfig) {
   const probes = createProbes(config)
 
-  return Promise.all(probes).then(results => results.flatMap((result) => {
-    if (result.length > 0) {
-      return {
-        method: result[0]!.method,
-        path: result[0]!.path,
-        config: result.reduce((acc, curr) => defu(curr.config, acc), {} as ProbeConfig),
-        samples: result.reduce((acc, curr) => acc.concat(curr.samples), [] as string[]),
-      }
-    }
-    else {
-      config.logger.error('Did not receive any valid probe responses')
+  return Promise.all(probes).then(probeResults => probeResults.flatMap(({ method, path, results }) => {
+    if (results.length === 0) {
+      config.logger.error(`Did not receive any valid probe responses for "${method} ${path}"`)
+
+      return []
     }
 
-    return []
+    return {
+      method,
+      path,
+      config: results.reduce((acc, curr) => defu(curr.config, acc), {} as ProbeConfig),
+      samples: results.flatMap(result => result.samples.filter(sample => sample.length > 0)),
+    }
   }))
 }

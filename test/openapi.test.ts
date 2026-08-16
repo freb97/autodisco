@@ -180,9 +180,15 @@ describe('openapi schema generation', () => {
     expect(schemaJson).toHaveProperty('openapi', '3.1.1')
     expect(schemaJson).toHaveProperty('paths')
 
+    expect(schemaJson.paths).toEqual({})
+    expect(schemaJson.components?.schemas ?? {}).toEqual({})
+
     const stderrCalls = stderrSpy.mock.calls.map(call => call[0].toString())
     expect(stderrCalls.some(
-      call => call.includes('Received error response fetching "get /does-not-exist": Not Found'),
+      call => call.includes('Received error response fetching "get /does-not-exist": 404 Not Found'),
+    )).toBe(true)
+    expect(stderrCalls.some(
+      call => call.includes('Did not receive any valid probe responses for "get /does-not-exist"'),
     )).toBe(true)
   })
 

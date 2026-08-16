@@ -4,7 +4,7 @@ import type { ParsedDiscoverConfig } from '../config'
 import { mkdir, writeFile } from 'node:fs/promises'
 import { joinURL } from 'ufo'
 
-import { resolveTypeName } from '../../helpers/path'
+import { resolveTypeNames } from '../../helpers/path'
 import { buildAST } from './ast/builder'
 import { writeAST } from './ast/writer'
 
@@ -23,8 +23,10 @@ export async function generateTypescriptTypes(schemaResults: SchemaResult[], con
     return
   }
 
+  const names = resolveTypeNames(schemaResults, config.baseUrl)
+
   const components = schemaResults.map(result => ({
-    name: resolveTypeName(joinURL(config.baseUrl ?? '', result.path)),
+    name: names.get(`${result.method} ${result.path}`)!,
     path: result.path,
     method: result.method,
     output: result.schema,

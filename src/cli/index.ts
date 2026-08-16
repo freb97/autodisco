@@ -2,7 +2,7 @@
 
 import { defineCommand, runMain } from 'citty'
 
-import { runFromArgs, runFromConfig } from './actions/discover'
+import { runFromCliArgs } from './actions/discover'
 
 const command = defineCommand({
   meta: {
@@ -54,22 +54,7 @@ const command = defineCommand({
     },
   },
 
-  run: async ({ args }) => {
-    const configPathProvided = Object.entries(args).length === 2 || (args.configPath && args.configPath.length > 0)
-    const configPathIsUrl = args.configPath?.startsWith('http://') || args.configPath?.startsWith('https://')
-
-    if (configPathProvided) {
-      if (!configPathIsUrl) {
-        await runFromConfig(args)
-      }
-      else {
-        await runFromArgs({ ...args, path: args.configPath })
-      }
-    }
-    else if (args.path) {
-      await runFromArgs(args)
-    }
-  },
+  run: ({ args }) => runFromCliArgs(args),
 })
 
 runMain(command)

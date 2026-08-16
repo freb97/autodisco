@@ -132,23 +132,17 @@ function merge(schemas: z.ZodType[]): z.ZodType {
 
     const areAllObjects = normalizedSchemas.every(s => s instanceof z.ZodObject)
 
-    if (areAllObjects && normalizedSchemas.length > 1) {
-      mergedProp = merge(normalizedSchemas)
-    }
-    else if (normalizedSchemas.length === 1) {
+    if (normalizedSchemas.length === 1) {
       mergedProp = normalizedSchemas[0]!
     }
+    else if (areAllObjects) {
+      mergedProp = merge(normalizedSchemas)
+    }
+    else if (normalizedSchemas.every(s => s instanceof z.ZodArray)) {
+      mergedProp = z.array(merge(normalizedSchemas.map(s => (s as z.ZodArray<any>).element).filter(Boolean)))
+    }
     else {
-      if (normalizedSchemas.length === 1) {
-        mergedProp = normalizedSchemas[0]!
-      }
-      else {
-        mergedProp = areAllObjects
-          ? merge(normalizedSchemas)
-          : normalizedSchemas.every(s => s instanceof z.ZodArray)
-            ? z.array(merge(normalizedSchemas.map(s => (s as z.ZodArray<any>).element).filter(Boolean)))
-            : z.union(normalizedSchemas as [z.ZodTypeAny, z.ZodTypeAny, ...z.ZodTypeAny[]])
-      }
+      mergedProp = z.union(normalizedSchemas as [z.ZodTypeAny, z.ZodTypeAny, ...z.ZodTypeAny[]])
     }
 
     const shouldBeOptional = count !== objectSchemas.length || hasOptionalVariant
@@ -179,20 +173,15 @@ function inferObject(value: object, options?: InferOptions): z.ZodType {
  * Infers unique Zod schemas from a given array of values
  *
  * @param values Array of values to infer schemas from
- * @param discriminatorKey Optional discriminator key for union types
  *
  * @returns A map of unique Zod schemas
  */
-function inferUniqueArray(values: any[], discriminatorKey?: string, options?: InferOptions): Map<string, z.ZodType> {
+function inferUniqueArray(values: any[], options?: InferOptions): Map<string, z.ZodType> {
   const uniqueSchemas = new Map<string, z.ZodType>()
 
   for (const item of values) {
     const schema = inferFromValue(item, options)
     const hash = getSchemaHash(schema)
-
-    if (discriminatorKey && schema instanceof z.ZodObject) {
-      schema.shape[discriminatorKey] = z.literal(item[discriminatorKey])
-    }
 
     if (!uniqueSchemas.has(hash)) {
       uniqueSchemas.set(hash, schema)
@@ -245,7 +234,7 @@ function inferArray(value: any[], options?: InferOptions): z.ZodArray {
     return z.array(inferFromValue(value[0]!, options))
   }
 
-  const uniqueSchemas = inferUniqueArray(value, undefined, options)
+  const uniqueSchemas = inferUniqueArray(value, options)
 
   if (uniqueSchemas.size === 1) {
     return z.array(uniqueSchemas.values().next().value!)

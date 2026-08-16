@@ -3,7 +3,7 @@ import type { ParsedDiscoverConfig } from '../config'
 import { writeFile } from 'node:fs/promises'
 
 import { joinURL } from 'ufo'
-import { resolveTypeName } from '../../helpers/path'
+import { resolveTypeNames } from '../../helpers/path'
 import { buildAST } from './ast/builder'
 import { writeAST } from './ast/writer'
 
@@ -236,7 +236,7 @@ function generateFilesSection(
       list(mapOutputs(json, (method, output) => ({
         text: `${method.toUpperCase()}`,
         children: output.map(result => ({
-          text: `${result.name}.ts`,
+          text: `${result.name}.json`,
           link: `./json/${method}/${result.name}.json`,
         })),
       }))),
@@ -262,8 +262,10 @@ export async function generateMarkdownSchema(
   }
 
   if (!typescript) {
+    const names = resolveTypeNames(schemaResults, config.baseUrl)
+
     typescript = schemaResults.map(result => ({
-      name: resolveTypeName(joinURL(config.baseUrl ?? '', result.path)),
+      name: names.get(`${result.method} ${result.path}`)!,
       path: result.path,
       method: result.method,
       output: writeAST(buildAST(result.schema), { lang: 'typescript' }),

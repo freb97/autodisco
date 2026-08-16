@@ -3,6 +3,21 @@ import type { IncomingMessage, ServerResponse } from 'node:http'
 import { createServer } from 'node:http'
 
 /**
+ * Read the full request body as a string
+ */
+function readBody(req: IncomingMessage) {
+  return new Promise<string>((resolve) => {
+    let body = ''
+
+    req.on('data', (chunk) => {
+      body += chunk.toString()
+    })
+
+    req.on('end', () => resolve(body))
+  })
+}
+
+/**
  * Simple test API server that returns static JSON responses
  *
  * @param port Port to run the server on
@@ -186,16 +201,25 @@ export default function createTestAPI(port = 3456) {
 
     // POST /users - Create user
     if (method === 'POST' && url === '/users') {
-      let _body = ''
-      req.on('data', (chunk) => {
-        _body += chunk.toString()
-      })
-      req.on('end', () => {
+      readBody(req).then(() => {
         res.writeHead(201)
         res.end(JSON.stringify({
           id: 3,
           success: true,
           message: 'User created',
+        }))
+      })
+      return
+    }
+
+    // POST /echo - Reflects the received request back
+    if (url === '/echo') {
+      readBody(req).then((body) => {
+        res.writeHead(200)
+        res.end(JSON.stringify({
+          method,
+          body,
+          contentType: req.headers['content-type'] ?? null,
         }))
       })
       return

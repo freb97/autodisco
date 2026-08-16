@@ -13,10 +13,33 @@ interface DiscoverArgs {
   path?: string
   method?: string
   query?: string
-  params?: string
   body?: string
   headers?: string
   generate?: string
+}
+
+/**
+ * Parse a JSON encoded CLI argument
+ *
+ * @param value Raw argument value
+ * @param name Argument name, used for error reporting
+ *
+ * @returns The parsed value, or undefined if the argument was not provided
+ */
+function parseJsonArg(value: string | undefined, name: string) {
+  if (value === undefined || value.length === 0) {
+    return undefined
+  }
+
+  try {
+    return JSON.parse(value)
+  }
+  catch (error) {
+    throw new Error(
+      `Invalid JSON passed to --${name}: ${error instanceof Error ? error.message : String(error)}`,
+      { cause: error },
+    )
+  }
 }
 
 export async function runFromConfig(args: Pick<DiscoverArgs, 'configPath'>) {
@@ -39,6 +62,8 @@ export async function runFromConfig(args: Pick<DiscoverArgs, 'configPath'>) {
     else {
       log.error(`No config found for path: ${targetPath}`)
 
+      process.exitCode = 1
+
       return
     }
   }
@@ -52,8 +77,10 @@ export async function runFromConfig(args: Pick<DiscoverArgs, 'configPath'>) {
     dotenv: false,
   })
 
-  if (!config) {
-    log.error('Failed to load configuration file.')
+  if (!config || Object.keys(config).length === 0) {
+    log.error(`No autodisco configuration found in "${cwd}". Create an autodisco.config.ts file, or pass an endpoint with --path.`)
+
+    process.exitCode = 1
 
     return
   }
@@ -61,7 +88,41 @@ export async function runFromConfig(args: Pick<DiscoverArgs, 'configPath'>) {
   await discover(config)
 }
 
+/**
+ * Route parsed CLI arguments to the matching discovery run
+ *
+ * @param args Parsed CLI arguments
+ */
+export async function runFromCliArgs(args: DiscoverArgs) {
+  const configPath = args.configPath?.trim()
+
+  try {
+    if (/^https?:\/\//.test(configPath ?? '')) {
+      await runFromArgs({ ...args, path: configPath })
+    }
+    else if (!configPath && args.path) {
+      await runFromArgs(args)
+    }
+    else {
+      await runFromConfig({ configPath })
+    }
+  }
+  catch (error) {
+    log.error(error instanceof Error ? error.message : error)
+
+    process.exitCode = 1
+  }
+}
+
 export async function runFromArgs(args: Omit<DiscoverArgs, 'configPath'>) {
+  if (!args.path) {
+    log.error('No endpoint provided. Pass an endpoint with --path, or point at a config file.')
+
+    process.exitCode = 1
+
+    return
+  }
+
   const generateArgs = args.generate ? args.generate.split(',').map(arg => arg.trim()) : []
 
   const config: DiscoverConfig = {
@@ -70,9 +131,9 @@ export async function runFromArgs(args: Omit<DiscoverArgs, 'configPath'>) {
     probes: {
       [args.method?.toLowerCase() || 'get']: {
         '/': {
-          body: args.body ? JSON.parse(args.body) : undefined,
-          query: args.query ? JSON.parse(args.query) : undefined,
-          headers: args.headers ? JSON.parse(args.headers) : undefined,
+          body: parseJsonArg(args.body, 'body'),
+          query: parseJsonArg(args.query, 'query'),
+          headers: parseJsonArg(args.headers, 'headers'),
         },
       },
     },
