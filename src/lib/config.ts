@@ -50,7 +50,10 @@ const discoverConfigSchema = z.object({
     }).or(z.boolean()).optional(),
     json: z.boolean().optional(),
     zod: z.boolean().optional(),
-    markdown: z.boolean().optional(),
+    markdown: z.union([
+      z.boolean(),
+      z.object({ timestamp: z.boolean().optional() }),
+    ]).optional(),
     typescript: z.boolean().optional(),
   }).optional(),
   clear: z.boolean().optional(),

@@ -13,6 +13,7 @@ interface DiscoverArgs {
   path?: string
   method?: string
   query?: string
+  params?: string
   body?: string
   headers?: string
   generate?: string
@@ -40,6 +41,24 @@ function parseJsonArg(value: string | undefined, name: string) {
       { cause: error },
     )
   }
+}
+
+/**
+ * Split an endpoint URL into a base URL and the path to probe, so that path
+ * parameters and query arguments can be applied to it.
+ *
+ * @param endpoint Endpoint URL or path
+ *
+ * @returns The base URL and the path to probe
+ */
+function splitEndpoint(endpoint: string) {
+  const match = /^([a-z][\w+.-]*:\/\/[^/?#]+)([/?#].*)?$/i.exec(endpoint)
+
+  if (!match) {
+    return { baseUrl: endpoint, path: '/' }
+  }
+
+  return { baseUrl: match[1]!, path: match[2] || '/' }
 }
 
 export async function runFromConfig(args: Pick<DiscoverArgs, 'configPath'>) {
@@ -125,13 +144,16 @@ export async function runFromArgs(args: Omit<DiscoverArgs, 'configPath'>) {
 
   const generateArgs = args.generate ? args.generate.split(',').map(arg => arg.trim()) : []
 
+  const { baseUrl, path } = splitEndpoint(args.path)
+
   const config: DiscoverConfig = {
-    baseUrl: args.path,
+    baseUrl,
 
     probes: {
       [args.method?.toLowerCase() || 'get']: {
-        '/': {
+        [path]: {
           body: parseJsonArg(args.body, 'body'),
+          params: parseJsonArg(args.params, 'params'),
           query: parseJsonArg(args.query, 'query'),
           headers: parseJsonArg(args.headers, 'headers'),
         },

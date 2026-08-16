@@ -35,6 +35,12 @@ const command = defineCommand({
       required: false,
     },
 
+    params: {
+      type: 'string',
+      description: 'Path parameters to use for the endpoint discovery, in JSON format. Only works when the path argument is provided.',
+      required: false,
+    },
+
     query: {
       type: 'string',
       description: 'Query parameters to use for the endpoint discovery, in JSON format. Only works when the path argument is provided.',
