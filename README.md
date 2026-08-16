@@ -91,7 +91,7 @@ if the path is a local file, it will be treated as a configuration file and the 
 When running for a single endpoint, you can also specify the endpoint directly in the command:
 
 ```sh
-npx autodisco https://jsonplaceholder.typicode.com/posts --method POST --body '{"userId: 1, "title": "foo", "body": "bar"}'
+npx autodisco https://jsonplaceholder.typicode.com/posts --method POST --body '{"userId": 1, "title": "foo", "body": "bar"}'
 ```
 
 This will create an OpenAPI schema in `autodisco/openapi/schema.json` based on the response from the provided endpoint using the specified HTTP method and request body.
@@ -100,9 +100,16 @@ Available CLI options are:
 
 - `--method`: The HTTP method to use for the probe (default: `GET`).
 - `--headers`: Headers to include in the request (in JSON format).
+- `--params`: Path parameters to substitute into the endpoint (in JSON format).
 - `--query`: Query parameters to include in the request (in JSON format).
 - `--body`: The request body to include in the request (in JSON format).
-- `--generate`: Options to customize code generation (available values: `openapi`, `typescript`, `json`, `zod`, `markdown`).
+- `--generate`: Options to customize code generation (available values: `openapi`, `openapi-typescript`, `typescript`, `json`, `zod`, `markdown`).
+
+Path parameters are substituted into the endpoint, so `{id}` placeholders work from the CLI too:
+
+```sh
+npx autodisco 'https://jsonplaceholder.typicode.com/posts/{id}' --params '{"id": 1}'
+```
 
 ### Programmatic Usage
 
@@ -351,6 +358,7 @@ The `discover` function accepts a configuration object with the following values
 - `clear`: Whether to clear the output directory before generating files (`boolean`, default: `true`).
 - `generate`: Options to customize code generation (optional)
   - `markdown`: Whether to generate Markdown documentation (`boolean`, default: `true`).
+    Pass `{ timestamp: false }` to omit the generation timestamp, which keeps the generated `API.md` byte-stable across runs.
   - `openapi`: Whether to generate the OpenAPI schema (`boolean`, default: `true`).
   - `typescript`: Whether to generate TypeScript types (`boolean | generateTypescriptOptions`, optional).
   - `zod`: Whether to generate Zod schemas (`boolean`, optional).
