@@ -1,3 +1,13 @@
+# 2.0.6
+- Fixed request bodies being sent as `[object Object]` instead of JSON
+- Fixed paths with multiple methods overwriting each other in the OpenAPI document
+- Fixed colliding type names overwriting and corrupting generated files
+- Fixed error responses being inferred into schemas
+- Fixed the CLI exiting successfully without doing anything
+- Added `--params` for substituting path parameters from the CLI
+- Added `generate.markdown.timestamp` to keep generated Markdown byte-stable
+- Improved CLI error reporting for malformed JSON arguments and missing config
+
 # 2.0.5
 - Fixed component naming for routes using dashes and underscores
 - Added union deduplication for generated type output
