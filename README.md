@@ -491,39 +491,39 @@ The `hooks` configuration allows you to customize the discovery process by provi
 
 ## Development
 
-To run the project locally, you need to have [Bun](https://bun.sh/) installed.
+To run the project locally, you need to have [Node.js](https://nodejs.org/) and [pnpm](https://pnpm.io/) installed.
 You can use the provided nix-shell for a consistent development environment.
 
 Install dependencies:
 
 ```sh
-bun install
+pnpm install
 ```
 
 Run tests:
 
 ```sh
-bun test
+pnpm test
 ```
 
 Run linter:
 
 ```sh
-bun lint
+pnpm lint
 ```
 
 Run typechecks:
 
 ```sh
-bun typecheck
+pnpm typecheck
 ```
 
-To run the CLI locally, you can use `bun run`:
+To run the CLI locally, you can use `tsx`:
 
 ```sh
-bun run ./src/cli/index.ts https://jsonplaceholder.typicode.com/posts
+pnpm dlx tsx ./src/cli/index.ts https://jsonplaceholder.typicode.com/posts
 # Or
-bun run ./src/cli/index.ts ./path/to/config
+pnpm dlx tsx ./src/cli/index.ts ./path/to/config
 ```
 
 ## Limitations
