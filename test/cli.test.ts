@@ -1,21 +1,31 @@
 import type { DiscoverConfig } from '../src/lib/config'
 
+import { resolve } from 'node:path'
 import process from 'node:process'
+import { loadConfig } from 'c12'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { runFromArgs, runFromCliArgs, runFromConfig } from '../src/cli/actions/discover'
 import discover from '../src/index'
 
 vi.mock('../src/index', () => ({ default: vi.fn() }))
+vi.mock('c12', () => ({ loadConfig: vi.fn() }))
 
 const discovered = vi.mocked(discover)
+const loaded = vi.mocked(loadConfig)
 
 function lastConfig(): DiscoverConfig {
   return discovered.mock.calls.at(-1)![0]
 }
 
+function lastLoadOptions() {
+  return loaded.mock.calls.at(-1)![0]!
+}
+
 beforeEach(() => {
   discovered.mockClear()
+  loaded.mockReset()
+  loaded.mockResolvedValue({ config: { baseUrl: 'https://api.example.com', probes: {} } } as never)
   process.exitCode = 0
 })
 
@@ -87,24 +97,31 @@ describe('runFromConfig', () => {
   it('should load a config file passed by path', async () => {
     await runFromConfig({ configPath: 'examples/jsonplaceholder/autodisco.config.ts' })
 
+    expect(lastLoadOptions()).toMatchObject({
+      configFile: resolve('examples/jsonplaceholder/autodisco.config.ts'),
+      cwd: resolve('examples/jsonplaceholder'),
+    })
     expect(discovered).toHaveBeenCalledTimes(1)
-    expect(lastConfig()).toHaveProperty('baseUrl', 'https://jsonplaceholder.typicode.com')
   })
 
   it('should load a config file from a directory', async () => {
     await runFromConfig({ configPath: 'examples/jsonplaceholder' })
 
+    expect(lastLoadOptions()).toMatchObject({ cwd: resolve('examples/jsonplaceholder') })
+    expect(lastLoadOptions().configFile).toBeUndefined()
     expect(discovered).toHaveBeenCalledTimes(1)
-    expect(lastConfig()).toHaveProperty('baseUrl', 'https://jsonplaceholder.typicode.com')
   })
 
   it('should not run when the path does not exist', async () => {
     await runFromConfig({ configPath: 'examples/does-not-exist' })
 
+    expect(loaded).not.toHaveBeenCalled()
     expect(discovered).not.toHaveBeenCalled()
   })
 
   it('should not run when no config is found', async () => {
+    loaded.mockResolvedValue({ config: {} } as never)
+
     await runFromConfig({ configPath: 'test/setup' })
 
     expect(discovered).not.toHaveBeenCalled()
@@ -122,7 +139,8 @@ describe('runFromCliArgs', () => {
   it('should treat a positional non-URL as a config location', async () => {
     await runFromCliArgs({ configPath: 'examples/jsonplaceholder' })
 
-    expect(lastConfig()).toHaveProperty('baseUrl', 'https://jsonplaceholder.typicode.com')
+    expect(lastLoadOptions()).toMatchObject({ cwd: resolve('examples/jsonplaceholder') })
+    expect(discovered).toHaveBeenCalledTimes(1)
   })
 
   it('should use --path when no positional argument is given', async () => {
@@ -134,6 +152,8 @@ describe('runFromCliArgs', () => {
   it('should fall back to the config in the working directory', async () => {
     await runFromCliArgs({})
 
+    expect(lastLoadOptions()).toMatchObject({ cwd: process.cwd() })
+    expect(lastLoadOptions().configFile).toBeUndefined()
     expect(discovered).toHaveBeenCalledTimes(1)
   })
 
